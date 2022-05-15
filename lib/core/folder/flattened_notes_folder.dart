@@ -25,13 +25,7 @@ class FlattenedNotesFolder with NotesFolderNotifier implements NotesFolder {
     _folders.add(folder);
 
     // Add Change notifiers
-    folder.addFolderAddedListener(_folderAdded);
-    folder.addFolderRemovedListener(_folderRemoved);
-
-    folder.addNoteAddedListener(_noteAdded);
-    folder.addNoteRemovedListener(_noteRemoved);
-    folder.addNoteModifiedListener(_noteModified);
-    folder.addNoteRenameListener(_noteRenamed);
+    _addChangeNotifierListener(folder);
 
     // Add Individual Notes
     for (var note in folder.notes) {
@@ -42,6 +36,17 @@ class FlattenedNotesFolder with NotesFolderNotifier implements NotesFolder {
     for (var folder in folder.subFolders) {
       _addFolder(folder);
     }
+  }
+
+  void _addChangeNotifierListener(NotesFolder folder) {
+    // Add Change notifiers
+    folder.addFolderAddedListener(_folderAdded);
+    folder.addFolderRemovedListener(_folderRemoved);
+
+    folder.addNoteAddedListener(_noteAdded);
+    folder.addNoteRemovedListener(_noteRemoved);
+    folder.addNoteModifiedListener(_noteModified);
+    folder.addNoteRenameListener(_noteRenamed);
   }
 
   @override
@@ -61,6 +66,10 @@ class FlattenedNotesFolder with NotesFolderNotifier implements NotesFolder {
     //
     // FIXME: Wouldn't all the notes from this folder also need to be removed?
     //
+    _removeChangeNotifierListener(folder);
+  }
+
+  void _removeChangeNotifierListener(NotesFolder folder) {
     folder.removeFolderAddedListener(_folderAdded);
     folder.removeFolderRemovedListener(_folderRemoved);
 
