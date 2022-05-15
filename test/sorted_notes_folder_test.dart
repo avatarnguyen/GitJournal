@@ -6,11 +6,6 @@
 
 import 'dart:math';
 
-import 'package:path/path.dart' as p;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:test/test.dart';
-import 'package:universal_io/io.dart' as io;
-
 import 'package:gitjournal/core/file/file.dart';
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/core/folder/notes_folder_config.dart';
@@ -19,161 +14,179 @@ import 'package:gitjournal/core/folder/sorted_notes_folder.dart';
 import 'package:gitjournal/core/folder/sorting_mode.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/utils/result.dart';
+import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test/test.dart';
+import 'package:universal_io/io.dart' as io;
+
 import 'lib.dart';
 
 void main() {
   setUpAll(gjSetupAllTests);
 
-  group('Sorted Notes Folder Test', () {
-    late String repoPath;
-    late io.Directory tempDir;
-    late NotesFolderFS folder;
-    late NotesFolderConfig config;
-    late FileStorage fileStorage;
+  group(
+    'Sorted Notes Folder Test',
+    () {
+      late String repoPath;
+      late io.Directory tempDir;
+      late NotesFolderFS folder;
+      late NotesFolderConfig config;
+      late FileStorage fileStorage;
 
-    final gitDt = DateTime.now();
+      final gitDt = DateTime.now();
 
-    setUp(() async {
-      tempDir =
-          await io.Directory.systemTemp.createTemp('__sorted_folder_test__');
-      repoPath = tempDir.path + p.separator;
+      setUp(() async {
+        tempDir =
+            await io.Directory.systemTemp.createTemp('__sorted_folder_test__');
+        repoPath = tempDir.path + p.separator;
+        print('Dir: $tempDir - Path: $repoPath');
 
-      SharedPreferences.setMockInitialValues({});
-      config = NotesFolderConfig('', await SharedPreferences.getInstance());
-      fileStorage = await FileStorage.fake(repoPath);
+        SharedPreferences.setMockInitialValues({});
+        config = NotesFolderConfig('', await SharedPreferences.getInstance());
+        fileStorage = await FileStorage.fake(repoPath);
 
-      folder = NotesFolderFS.root(config, fileStorage);
+        folder = NotesFolderFS.root(config, fileStorage);
 
-      var random = Random();
-      for (var i = 0; i < 5; i++) {
-        var path = p.join(folder.folderPath, "${random.nextInt(1000)}.md");
-        var note =
-            await NoteStorage.load(File.short(path, repoPath, gitDt), folder)
-                .getOrThrow();
-        note = note.copyWith(
-          modified: DateTime(2020, 1, 10 + (i * 2)),
-          body: "$i\n",
+        var random = Random();
+        for (var i = 0; i < 5; i++) {
+          var path = p.join(folder.folderPath, "${random.nextInt(1000)}.md");
+          var note =
+              await NoteStorage.load(File.short(path, repoPath, gitDt), folder)
+                  .getOrThrow();
+          note = note.copyWith(
+            modified: DateTime(2020, 1, 10 + (i * 2)),
+            body: "$i\n",
+          );
+          await NoteStorage.save(note).throwOnError();
+        }
+        await folder.loadRecursively();
+      });
+
+      tearDown(() async {
+        tempDir.deleteSync(recursive: true);
+      });
+
+      test(
+        'Should load the notes sorted',
+        () async {
+          var sf = SortedNotesFolder(
+            folder: folder,
+            sortingMode:
+                SortingMode(SortingField.Modified, SortingOrder.Descending),
+          );
+          expect(sf.hasNotes, true);
+          expect(sf.isEmpty, false);
+          expect(sf.name.startsWith("__sorted_folder_test__"), true);
+          expect(sf.subFolders.length, 0);
+          expect(sf.notes.length, 5);
+
+          expect(sf.notes[0].body, "4\n");
+          expect(sf.notes[1].body, "3\n");
+          expect(sf.notes[2].body, "2\n");
+          expect(sf.notes[3].body, "1\n");
+          expect(sf.notes[4].body, "0\n");
+        },
+      );
+
+      test('Should on modification remains sorted', () async {
+        var sf = SortedNotesFolder(
+          folder: folder,
+          sortingMode:
+              SortingMode(SortingField.Modified, SortingOrder.Descending),
         );
-        await NoteStorage.save(note).throwOnError();
-      }
-      await folder.loadRecursively();
-    });
 
-    tearDown(() async {
-      tempDir.deleteSync(recursive: true);
-    });
+        var i = sf.notes.indexWhere((n) => n.body == "1\n");
+        sf.notes[i] = sf.notes[i].copyWith(modified: DateTime(2020, 2, 1));
 
-    test('Should load the notes sorted', () async {
-      var sf = SortedNotesFolder(
-        folder: folder,
-        sortingMode:
-            SortingMode(SortingField.Modified, SortingOrder.Descending),
-      );
-      expect(sf.hasNotes, true);
-      expect(sf.isEmpty, false);
-      expect(sf.name.startsWith("__sorted_folder_test__"), true);
-      expect(sf.subFolders.length, 0);
-      expect(sf.notes.length, 5);
+        expect(sf.notes[0].body, "1\n");
+        expect(sf.notes[1].body, "4\n");
+        expect(sf.notes[2].body, "3\n");
+        expect(sf.notes[3].body, "2\n");
+        expect(sf.notes[4].body, "0\n");
+      });
 
-      expect(sf.notes[0].body, "4\n");
-      expect(sf.notes[1].body, "3\n");
-      expect(sf.notes[2].body, "2\n");
-      expect(sf.notes[3].body, "1\n");
-      expect(sf.notes[4].body, "0\n");
-    });
+      test(
+        'Should add new note correctly',
+        () async {
+          var sf = SortedNotesFolder(
+            folder: folder,
+            sortingMode:
+                SortingMode(SortingField.Modified, SortingOrder.Descending),
+          );
 
-    test('Should on modification remains sorted', () async {
-      var sf = SortedNotesFolder(
-        folder: folder,
-        sortingMode:
-            SortingMode(SortingField.Modified, SortingOrder.Descending),
-      );
+          var fNew = File.short('new.md', repoPath, gitDt);
+          var note = await NoteStorage.load(fNew, folder).getOrThrow();
+          folder.add(note);
 
-      var i = sf.notes.indexWhere((n) => n.body == "1\n");
-      sf.notes[i] = sf.notes[i].copyWith(modified: DateTime(2020, 2, 1));
+          note = note.copyWith(
+            modified: DateTime(2020, 2, 1),
+            body: "new\n",
+          );
+          await NoteStorage.save(note).throwOnError();
 
-      expect(sf.notes[0].body, "1\n");
-      expect(sf.notes[1].body, "4\n");
-      expect(sf.notes[2].body, "3\n");
-      expect(sf.notes[3].body, "2\n");
-      expect(sf.notes[4].body, "0\n");
-    });
+          expect(sf.notes.length, 6);
 
-    test('Should add new note correctly', () async {
-      var sf = SortedNotesFolder(
-        folder: folder,
-        sortingMode:
-            SortingMode(SortingField.Modified, SortingOrder.Descending),
+          expect(sf.notes[0].body, "new\n");
+          expect(sf.notes[1].body, "4\n");
+          expect(sf.notes[2].body, "3\n");
+          expect(sf.notes[3].body, "2\n");
+          expect(sf.notes[4].body, "1\n");
+          expect(sf.notes[5].body, "0\n");
+        },
       );
 
-      var fNew = File.short('new.md', repoPath, gitDt);
-      var note = await NoteStorage.load(fNew, folder).getOrThrow();
-      folder.add(note);
+      test(
+        'Should add new note to end works correctly',
+        () async {
+          var sf = SortedNotesFolder(
+            folder: folder,
+            sortingMode:
+                SortingMode(SortingField.Modified, SortingOrder.Descending),
+          );
 
-      note = note.copyWith(
-        modified: DateTime(2020, 2, 1),
-        body: "new\n",
-      );
-      await NoteStorage.save(note).throwOnError();
+          var fNew = File.short('new.md', repoPath, gitDt);
+          var note = await NoteStorage.load(fNew, folder).getOrThrow();
+          folder.add(note);
 
-      expect(sf.notes.length, 6);
+          note = note.copyWith(
+            modified: DateTime(2020, 1, 1),
+            body: "new\n",
+          );
+          await NoteStorage.save(note).throwOnError();
 
-      expect(sf.notes[0].body, "new\n");
-      expect(sf.notes[1].body, "4\n");
-      expect(sf.notes[2].body, "3\n");
-      expect(sf.notes[3].body, "2\n");
-      expect(sf.notes[4].body, "1\n");
-      expect(sf.notes[5].body, "0\n");
-    });
+          expect(sf.notes.length, 6);
 
-    test('Should add new note to end works correctly', () async {
-      var sf = SortedNotesFolder(
-        folder: folder,
-        sortingMode:
-            SortingMode(SortingField.Modified, SortingOrder.Descending),
-      );
-
-      var fNew = File.short('new.md', repoPath, gitDt);
-      var note = await NoteStorage.load(fNew, folder).getOrThrow();
-      folder.add(note);
-
-      note = note.copyWith(
-        modified: DateTime(2020, 1, 1),
-        body: "new\n",
-      );
-      await NoteStorage.save(note).throwOnError();
-
-      expect(sf.notes.length, 6);
-
-      expect(sf.notes[0].body, "4\n");
-      expect(sf.notes[1].body, "3\n");
-      expect(sf.notes[2].body, "2\n");
-      expect(sf.notes[3].body, "1\n");
-      expect(sf.notes[4].body, "0\n");
-      expect(sf.notes[5].body, "new\n");
-    });
-
-    test('If still sorted while loading the notes', () async {
-      var folder = NotesFolderFS.root(config, fileStorage);
-      var sf = SortedNotesFolder(
-        folder: folder,
-        sortingMode:
-            SortingMode(SortingField.Modified, SortingOrder.Descending),
+          expect(sf.notes[0].body, "4\n");
+          expect(sf.notes[1].body, "3\n");
+          expect(sf.notes[2].body, "2\n");
+          expect(sf.notes[3].body, "1\n");
+          expect(sf.notes[4].body, "0\n");
+          expect(sf.notes[5].body, "new\n");
+        },
       );
 
-      await folder.loadRecursively();
+      test('If still sorted while loading the notes', () async {
+        var folder = NotesFolderFS.root(config, fileStorage);
+        var sf = SortedNotesFolder(
+          folder: folder,
+          sortingMode:
+              SortingMode(SortingField.Modified, SortingOrder.Descending),
+        );
 
-      expect(sf.hasNotes, true);
-      expect(sf.isEmpty, false);
-      expect(sf.name.startsWith("__sorted_folder_test__"), true);
-      expect(sf.subFolders.length, 0);
-      expect(sf.notes.length, 5);
+        await folder.loadRecursively();
 
-      expect(sf.notes[0].body, "4\n");
-      expect(sf.notes[1].body, "3\n");
-      expect(sf.notes[2].body, "2\n");
-      expect(sf.notes[3].body, "1\n");
-      expect(sf.notes[4].body, "0\n");
-    });
-  }, skip: true);
+        expect(sf.hasNotes, true);
+        expect(sf.isEmpty, false);
+        expect(sf.name.startsWith("__sorted_folder_test__"), true);
+        expect(sf.subFolders.length, 0);
+        expect(sf.notes.length, 5);
+
+        expect(sf.notes[0].body, "4\n");
+        expect(sf.notes[1].body, "3\n");
+        expect(sf.notes[2].body, "2\n");
+        expect(sf.notes[3].body, "1\n");
+        expect(sf.notes[4].body, "0\n");
+      });
+    },
+  );
 }

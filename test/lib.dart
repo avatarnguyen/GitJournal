@@ -8,15 +8,14 @@ import 'dart:io';
 
 import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:dart_git/utils/result.dart';
-import 'package:path/path.dart' as p;
-import 'package:process_run/process_run.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/storage_config.dart';
+import 'package:path/path.dart' as p;
+import 'package:process_run/process_run.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final inCI = Platform.environment.containsKey("CI");
 

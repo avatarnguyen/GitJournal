@@ -7,10 +7,10 @@
 import 'dart:io';
 
 import 'package:dart_git/dart_git.dart';
+import 'package:gitjournal/setup/clone_git_exec.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-import 'package:gitjournal/setup/clone_git_exec.dart';
 import '../lib.dart';
 
 // import 'package:gitjournal/setup/clone_libgit2.dart';
@@ -82,25 +82,29 @@ void main() {
     repo.close().throwOnError();
   });
 
-  test('Single Commit Repo - Default Master', () async {
-    var tempDir = await Directory.systemTemp.createTemp();
-    var repoPath = tempDir.path;
+  test(
+    'Single Commit Repo - Default Master',
+    () async {
+      var tempDir = await Directory.systemTemp.createTemp();
+      var repoPath = tempDir.path;
 
-    GitRepository.init(repoPath, defaultBranch: 'master').throwOnError();
-    addOneCommit(repoPath);
+      GitRepository.init(repoPath, defaultBranch: 'master').throwOnError();
+      addOneCommit(repoPath);
 
-    await clone(repoPath, emptyRepoHttp);
+      await clone(repoPath, emptyRepoHttp);
 
-    var repo = GitRepository.load(repoPath).getOrThrow();
-    var c = repo.headCommit().getOrThrow();
-    expect(c.message, "First Commit");
-    expect(c.parents, []);
+      var repo = GitRepository.load(repoPath).getOrThrow();
+      var c = repo.headCommit().getOrThrow();
+      expect(c.message, "First Commit");
+      expect(c.parents, []);
 
-    var branch = repo.currentBranch().getOrThrow();
-    expect(branch, 'main');
+      var branch = repo.currentBranch().getOrThrow();
+      expect(branch, 'main');
 
-    repo.close().throwOnError();
-  });
+      repo.close().throwOnError();
+    },
+    skip: true,
+  );
 
   test('Empty Repo - Default Main - Non Empty Remote', () async {
     var tempDir = await Directory.systemTemp.createTemp();
