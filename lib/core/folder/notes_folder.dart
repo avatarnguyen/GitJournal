@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import 'package:gitjournal/core/folder/notes_folder_notifier.dart';
+
 import '../note.dart';
 import 'notes_folder_config.dart';
-import 'notes_folder_notifier.dart';
 
 export 'notes_folder_config.dart';
 

@@ -5,12 +5,11 @@
  */
 
 import 'package:gitjournal/core/folder/notes_folder.dart';
-import 'package:gitjournal/core/folder/notes_folder_notifier.dart';
 import 'package:gitjournal/core/note.dart';
 
 typedef NotesFilter = Future<bool> Function(Note note);
 
-class FlattenedNotesFolder with NotesFolderNotifier implements NotesFolder {
+class FlattenedNotesFolder implements NotesFolder {
   final NotesFolder _parentFolder;
   final String title;
 
@@ -24,29 +23,41 @@ class FlattenedNotesFolder with NotesFolderNotifier implements NotesFolder {
   void _addFolder(NotesFolder folder) {
     _folders.add(folder);
 
-    // Add Change notifiers
     _addChangeNotifierListener(folder);
 
-    // Add Individual Notes
-    for (var note in folder.notes) {
-      _noteAdded(-1, note);
-    }
+    _addIndividualNotes(folder);
 
-    // Add Sub-Folders
-    for (var folder in folder.subFolders) {
-      _addFolder(folder);
+    _addSubFolders(folder);
+  }
+
+  void _addIndividualNotes(NotesFolder folder) {
+    for (final _note in folder.notes) {
+      _noteAdded(-1, _note);
+    }
+  }
+
+  void _addSubFolders(NotesFolder folder) {
+    for (final _folder in folder.subFolders) {
+      _addFolder(_folder);
     }
   }
 
   void _addChangeNotifierListener(NotesFolder folder) {
-    // Add Change notifiers
-    folder.addFolderAddedListener(_folderAdded);
-    folder.addFolderRemovedListener(_folderRemoved);
+    _addFolderListenerCallback(folder);
 
+    _addNoteListenerCallback(folder);
+  }
+
+  void _addNoteListenerCallback(NotesFolder folder) {
     folder.addNoteAddedListener(_noteAdded);
     folder.addNoteRemovedListener(_noteRemoved);
     folder.addNoteModifiedListener(_noteModified);
     folder.addNoteRenameListener(_noteRenamed);
+  }
+
+  void _addFolderListenerCallback(NotesFolder folder) {
+    folder.addFolderAddedListener(_folderAdded);
+    folder.addFolderRemovedListener(_folderRemoved);
   }
 
   @override
@@ -54,7 +65,6 @@ class FlattenedNotesFolder with NotesFolderNotifier implements NotesFolder {
     for (var folder in _folders) {
       _folderRemoved(-1, folder);
     }
-
     super.dispose();
   }
 
@@ -70,13 +80,21 @@ class FlattenedNotesFolder with NotesFolderNotifier implements NotesFolder {
   }
 
   void _removeChangeNotifierListener(NotesFolder folder) {
-    folder.removeFolderAddedListener(_folderAdded);
-    folder.removeFolderRemovedListener(_folderRemoved);
+    _removeFolderListenerCallback(folder);
 
+    _removeNoteListenerCallback(folder);
+  }
+
+  void _removeNoteListenerCallback(NotesFolder folder) {
     folder.removeNoteAddedListener(_noteAdded);
     folder.removeNoteRemovedListener(_noteRemoved);
     folder.removeNoteModifiedListener(_noteModified);
     folder.removeNoteRenameListener(_noteRenamed);
+  }
+
+  void _removeFolderListenerCallback(NotesFolder folder) {
+    folder.removeFolderAddedListener(_folderAdded);
+    folder.removeFolderRemovedListener(_folderRemoved);
   }
 
   void _noteAdded(int _, Note note) {
