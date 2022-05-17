@@ -6,26 +6,28 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:path/path.dart' as p;
-import 'package:path/path.dart';
-import 'package:synchronized/synchronized.dart';
-import 'package:universal_io/io.dart' as io;
-
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/core/file/unopened_files.dart';
+import 'package:gitjournal/core/folder/notes_folder_notifier.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/core/notes/note.dart';
 import 'package:gitjournal/core/views/inline_tags_view.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/utils/result.dart';
+import 'package:path/path.dart' as p;
+import 'package:path/path.dart';
+import 'package:synchronized/synchronized.dart';
+import 'package:universal_io/io.dart' as io;
+
 import '../file/file.dart';
 import '../file/ignored_file.dart';
 import '../note.dart';
 import 'notes_folder.dart';
-import 'notes_folder_notifier.dart';
 
-class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
+class NotesFolderFS extends NotesFolderNotifier
+    with NotesFolderObserver
+    implements NotesFolder {
   final NotesFolderFS? _parent;
   String _folderPath;
   final _lock = Lock();
@@ -83,7 +85,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
       var index = _files.indexWhere((n) => n.filePath == oldPath);
       _files[index] = note;
 
-      notifyNoteRenamed(-1, note, oldPath);
+      notifyNoteRenamed(-1, note, oldPath, noteRenameListeners);
     });
   }
 
@@ -200,7 +202,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
           _entityMap[file.filePath] = note;
 
           assert(note.oid.isNotEmpty);
-          notifyNoteAdded(index, note);
+          notifyNoteAdded(index, note, noteAddedListeners);
         }(i, file);
       } else if (file is Note) {
         future = (int index, Note note) async {
@@ -222,7 +224,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
           _entityMap[file.filePath] = note;
 
           assert(note.oid.isNotEmpty);
-          notifyNoteModified(index, note);
+          notifyNoteModified(index, note, noteModifiedListeners);
         }(i, file);
       } else {
         continue;
@@ -358,11 +360,11 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
 
       if (e is File) {
         if (e is Note) {
-          notifyNoteRemoved(-1, e);
+          notifyNoteRemoved(-1, e, noteRemovedListeners);
         }
       } else {
         _removeFolderListeners(e);
-        notifyFolderRemoved(-1, e);
+        notifyFolderRemoved(-1, e, folderRemovedListeners);
       }
     }
 
@@ -375,7 +377,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
         assert(e is! Note);
       } else {
         _addFolderListeners(e);
-        notifyFolderAdded(-1, e);
+        notifyFolderAdded(-1, e, folderAddedListeners);
       }
     }
 
@@ -420,7 +422,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
     _files.add(note);
     _entityMap[note.filePath] = note;
 
-    notifyNoteAdded(-1, note);
+    notifyNoteAdded(-1, note, noteAddedListeners);
   }
 
   void remove(Note note) {
@@ -440,7 +442,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
     _ = _entityMap.remove(f.filePath);
 
     if (f is Note) {
-      notifyNoteRemoved(index, f);
+      notifyNoteRemoved(index, f, noteRemovedListeners);
     }
   }
 
@@ -467,7 +469,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
     _folders.add(folder);
     _entityMap[folder.folderPath] = folder;
 
-    notifyFolderAdded(_folders.length - 1, folder);
+    notifyFolderAdded(_folders.length - 1, folder, folderAddedListeners);
   }
 
   void removeFolder(NotesFolderFS folder) {
@@ -488,7 +490,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
     _ = _folders.removeAt(index);
     _ = _entityMap.remove(folder.folderPath);
 
-    notifyFolderRemoved(index, folder);
+    notifyFolderRemoved(index, folder, folderRemovedListeners);
   }
 
   void rename(String newName) {
@@ -506,7 +508,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
     }
     var _ = dir.renameSync(fullFolderPath);
 
-    notifyThisFolderRenamed(this, oldPath);
+    notifyThisFolderRenamed(this, oldPath, thisFolderRenamedListeners);
   }
 
   void updateNote(Note note) {
@@ -516,7 +518,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
     _files[i] = note;
     _entityMap[note.filePath] = note;
 
-    notifyNoteModified(i, note);
+    notifyNoteModified(i, note, noteModifiedListeners);
   }
 
   void _addFolderListeners(NotesFolderFS folder) {
@@ -691,7 +693,7 @@ class NotesFolderFS with NotesFolderNotifier implements NotesFolder {
     }
 
     _noteRenamed(toNote, fromNote.filePath);
-    notifyNoteModified(-1, toNote);
+    notifyNoteModified(-1, toNote, noteModifiedListeners);
     return Result(null);
   }
 

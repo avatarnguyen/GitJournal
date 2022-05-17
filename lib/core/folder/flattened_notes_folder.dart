@@ -107,7 +107,7 @@ class FlattenedNotesFolder extends NotesFolderNotifier
       assert(
           false, '_noteAdded called on a note already added ${note.filePath}');
       _notes[note.filePath] = note;
-      notifyNoteModified(-1, note);
+      notifyNoteModified(-1, note, noteModifiedListeners);
       return;
     }
     _notes[note.filePath] = note;
@@ -125,7 +125,7 @@ class FlattenedNotesFolder extends NotesFolderNotifier
       assert(false, "_noteRemoved called on untracked note ${note.filePath}");
       return;
     }
-    notifyNoteRemoved(-1, note);
+    notifyNoteRemoved(-1, note, noteRemovedListeners);
   }
 
   Future<void> _noteModified(int _, Note note) async {
@@ -137,7 +137,7 @@ class FlattenedNotesFolder extends NotesFolderNotifier
     }
 
     _notes[note.filePath] = note;
-    notifyNoteModified(-1, note);
+    notifyNoteModified(-1, note, noteModifiedListeners);
   }
 
   void _noteRenamed(int _, Note note, String oldPath) {
@@ -147,7 +147,12 @@ class FlattenedNotesFolder extends NotesFolderNotifier
     }
 
     _notes[note.filePath] = note;
-    notifyNoteRenamed(-1, note, oldPath);
+    notifyNoteRenamed(
+      -1,
+      note,
+      oldPath,
+      noteRenameListeners,
+    );
   }
 
   @override

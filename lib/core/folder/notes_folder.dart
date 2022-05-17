@@ -25,6 +25,9 @@ abstract class NotesFolder extends NotesFolderObserver {
   NotesFolder? get fsFolder;
 
   NotesFolderConfig get config;
+
+  void addListener(void Function() folderChanged);
+  void removeListener(void Function() folderChanged);
 }
 
 class NotesFolderObserver {
