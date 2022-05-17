@@ -5,11 +5,12 @@
  */
 
 import 'package:gitjournal/core/folder/notes_folder.dart';
+import 'package:gitjournal/core/folder/notes_folder_notifier.dart';
 import 'package:gitjournal/core/note.dart';
 
 typedef NotesFilter = Future<bool> Function(Note note);
 
-class FlattenedNotesFolder implements NotesFolder {
+class FlattenedNotesFolder with NotesFolderNotifier implements NotesFolder {
   final NotesFolder _parentFolder;
   final String title;
 
