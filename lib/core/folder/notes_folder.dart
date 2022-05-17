@@ -13,7 +13,7 @@ import 'notes_folder_config.dart';
 
 export 'notes_folder_config.dart';
 
-abstract class NotesFolder {
+abstract class NotesFolder extends NotesFolderObserver {
   bool get isEmpty;
   bool get hasNotes;
   String get name;
@@ -28,7 +28,9 @@ abstract class NotesFolder {
 
   void addListener(void Function() folderChanged);
   void removeListener(void Function() folderChanged);
+}
 
+abstract class NotesFolderObserver {
   // Folder ObserverList
   ObserverList<void Function(int, NotesFolder)>? get folderAddedListeners;
   ObserverList<void Function(int, NotesFolder)>? get folderRemovedListeners;
@@ -69,7 +71,7 @@ abstract class NotesFolder {
   void removeThisFolderRenamedListener(FolderRenamedCallback listener);
 }
 
-class NotesFolderObserver {
+class NotesFolderObserverImpl {
   final ObserverList<void Function(int, NotesFolder)>? _folderAddedListeners =
       ObserverList<FolderNotificationCallback>();
   final ObserverList<void Function(int, NotesFolder)>? _folderRemovedListeners =

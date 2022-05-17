@@ -13,7 +13,7 @@ typedef NotesFilter = Future<bool> Function(Note note);
 // FIXME: Temporary adding NotesFolderObserver as mixin
 // *
 class FlattenedNotesFolder extends NotesFolderNotifier
-    with NotesFolderObserver
+    with NotesFolderObserverImpl
     implements NotesFolder {
   final NotesFolder _parentFolder;
   final String title;

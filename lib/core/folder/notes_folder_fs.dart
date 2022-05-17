@@ -26,7 +26,7 @@ import '../note.dart';
 import 'notes_folder.dart';
 
 class NotesFolderFS extends NotesFolderNotifier
-    with NotesFolderObserver
+    with NotesFolderObserverImpl
     implements NotesFolder {
   final NotesFolderFS? _parent;
   String _folderPath;
