@@ -176,31 +176,43 @@ class NotesFolderNotifier implements ChangeNotifier {
     notifyListeners();
   }
 
-  void notifyFolderAdded(int index, NotesFolder folder) {
+  void notifyFolderAdded(
+    int index,
+    NotesFolder folder,
+    ObserverList<FolderNotificationCallback>? folderAddedListeners,
+  ) {
     assert(folder is NotesFolderFS);
 
-    if (this is NotesFolderFS) assert(folder.parent == this);
-    _notifyFolderCallback(_folderAddedListeners, index, folder);
+    if (this is NotesFolderFS) assert(folder.parent == this as NotesFolderFS);
+    _notifyFolderCallback(folderAddedListeners, index, folder);
   }
 
-  void notifyFolderRemoved(int index, NotesFolder folder) {
-    if (this is NotesFolderFS) assert(folder.parent == this);
-    _notifyFolderCallback(_folderRemovedListeners, index, folder);
+  void notifyFolderRemoved(
+    int index,
+    NotesFolder folder,
+    ObserverList<FolderNotificationCallback>? olderRemovedListeners,
+  ) {
+    if (this is NotesFolderFS) assert(folder.parent == this as NotesFolderFS);
+    _notifyFolderCallback(olderRemovedListeners, index, folder);
   }
 
-  void notifyThisFolderRenamed(NotesFolderFS folder, String oldPath) {
+  void notifyThisFolderRenamed(
+    NotesFolderFS folder,
+    String oldPath,
+    ObserverList<FolderRenamedCallback>? thisFolderRenamedListeners,
+  ) {
     if (this is NotesFolderFS) assert(folder == this);
 
-    if (_thisFolderRenamedListeners == null ||
-        _thisFolderRenamedListeners!.isEmpty) {
+    if (thisFolderRenamedListeners == null ||
+        thisFolderRenamedListeners.isEmpty) {
       return;
     }
 
     final localListeners =
-        List<FolderRenamedCallback>.from(_thisFolderRenamedListeners!);
+        List<FolderRenamedCallback>.from(thisFolderRenamedListeners);
     for (var listener in localListeners) {
       try {
-        if (_thisFolderRenamedListeners!.contains(listener)) {
+        if (thisFolderRenamedListeners.contains(listener)) {
           listener(folder, oldPath);
         }
       } catch (exception, stack) {
@@ -257,36 +269,52 @@ class NotesFolderNotifier implements ChangeNotifier {
     notifyListeners();
   }
 
-  void notifyNoteAdded(int index, Note note) {
+  void notifyNoteAdded(
+    int index,
+    Note note,
+    ObserverList<NoteNotificationCallback>? noteAddedListeners,
+  ) {
     if (this is NotesFolderFS) assert(note.parent == this);
 
-    _notifyNoteCallback(_noteAddedListeners, index, note);
+    _notifyNoteCallback(noteAddedListeners, index, note);
   }
 
-  void notifyNoteRemoved(int index, Note note) {
+  void notifyNoteRemoved(
+    int index,
+    Note note,
+    ObserverList<NoteNotificationCallback>? noteRemovedListeners,
+  ) {
     if (this is NotesFolderFS) assert(note.parent == this);
 
-    _notifyNoteCallback(_noteRemovedListeners, index, note);
+    _notifyNoteCallback(noteRemovedListeners, index, note);
   }
 
-  void notifyNoteModified(int index, Note note) {
+  void notifyNoteModified(
+    int index,
+    Note note,
+    ObserverList<NoteNotificationCallback>? noteModifiedListeners,
+  ) {
     if (this is NotesFolderFS) assert(note.parent == this);
 
-    _notifyNoteCallback(_noteModifiedListeners, index, note);
+    _notifyNoteCallback(noteModifiedListeners, index, note);
   }
 
-  void notifyNoteRenamed(int index, Note note, String oldPath) {
+  void notifyNoteRenamed(
+    int index,
+    Note note,
+    String oldPath,
+    ObserverList<NoteRenamedCallback>? noteRenameListeners,
+  ) {
     if (this is NotesFolderFS) assert(note.parent == this);
 
-    if (_noteRenameListeners == null || _noteRenameListeners!.isEmpty) {
+    if (noteRenameListeners == null || noteRenameListeners.isEmpty) {
       return;
     }
 
-    final localListeners =
-        List<NoteRenamedCallback>.from(_noteRenameListeners!);
+    final localListeners = List<NoteRenamedCallback>.from(noteRenameListeners);
     for (var listener in localListeners) {
       try {
-        if (_noteRenameListeners!.contains(listener)) {
+        if (noteRenameListeners.contains(listener)) {
           listener(index, note, oldPath);
         }
       } catch (exception, stack) {

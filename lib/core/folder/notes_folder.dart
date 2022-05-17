@@ -13,7 +13,7 @@ import 'notes_folder_config.dart';
 
 export 'notes_folder_config.dart';
 
-abstract class NotesFolder with NotesFolderObserver, NotesObserver {
+abstract class NotesFolder extends NotesFolderObserver {
   bool get isEmpty;
   bool get hasNotes;
   String get name;
@@ -27,7 +27,14 @@ abstract class NotesFolder with NotesFolderObserver, NotesObserver {
   NotesFolderConfig get config;
 }
 
-class NotesObserver {
+class NotesFolderObserver {
+  final ObserverList<void Function(int, NotesFolder)>? _folderAddedListeners =
+      ObserverList<FolderNotificationCallback>();
+  final ObserverList<void Function(int, NotesFolder)>? _folderRemovedListeners =
+      ObserverList<FolderNotificationCallback>();
+  final ObserverList<void Function(NotesFolderFS, String)>?
+      _thisFolderRenamedListeners = ObserverList<FolderRenamedCallback>();
+
   final ObserverList<void Function(int, Note)>? _noteAddedListeners =
       ObserverList<NoteNotificationCallback>();
   final ObserverList<void Function(int, Note)>? _noteRemovedListeners =
@@ -36,6 +43,24 @@ class NotesObserver {
       ObserverList<NoteNotificationCallback>();
   final ObserverList<void Function(int, Note, String)>? _noteRenameListeners =
       ObserverList<NoteRenamedCallback>();
+
+  // Folder
+  ObserverList<void Function(int, NotesFolder)>? get folderAddedListeners =>
+      _folderAddedListeners;
+  ObserverList<void Function(int, NotesFolder)>? get folderRemovedListeners =>
+      _folderRemovedListeners;
+  ObserverList<void Function(NotesFolderFS, String)>?
+      get thisFolderRenamedListeners => _thisFolderRenamedListeners;
+
+  // Notes
+  ObserverList<void Function(int, Note)>? get noteAddedListeners =>
+      _noteAddedListeners;
+  ObserverList<void Function(int, Note)>? get noteRemovedListeners =>
+      _noteRemovedListeners;
+  ObserverList<void Function(int, Note)>? get noteModifiedListeners =>
+      _noteModifiedListeners;
+  ObserverList<void Function(int, Note, String)>? get noteRenameListeners =>
+      _noteRenameListeners;
 
   void addNoteAddedListener(NoteNotificationCallback listener) {
     if (_noteAddedListeners != null) {
@@ -88,15 +113,6 @@ class NotesObserver {
       var _ = _noteRenameListeners!.remove(listener);
     }
   }
-}
-
-class NotesFolderObserver {
-  final ObserverList<void Function(int, NotesFolder)>? _folderAddedListeners =
-      ObserverList<FolderNotificationCallback>();
-  final ObserverList<void Function(int, NotesFolder)>? _folderRemovedListeners =
-      ObserverList<FolderNotificationCallback>();
-  final ObserverList<void Function(NotesFolderFS, String)>?
-      _thisFolderRenamedListeners = ObserverList<FolderRenamedCallback>();
 
   void addFolderRemovedListener(FolderNotificationCallback listener) {
     if (_folderRemovedListeners != null) {

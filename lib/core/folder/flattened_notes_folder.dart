@@ -10,7 +10,11 @@ import 'package:gitjournal/core/note.dart';
 
 typedef NotesFilter = Future<bool> Function(Note note);
 
-class FlattenedNotesFolder with NotesFolderNotifier implements NotesFolder {
+// FIXME: Temporary adding NotesFolderObserver as mixin
+// *
+class FlattenedNotesFolder extends NotesFolderNotifier
+    with NotesFolderObserver
+    implements NotesFolder {
   final NotesFolder _parentFolder;
   final String title;
 
@@ -107,7 +111,11 @@ class FlattenedNotesFolder with NotesFolderNotifier implements NotesFolder {
       return;
     }
     _notes[note.filePath] = note;
-    notifyNoteAdded(_notes.length - 1, note);
+    notifyNoteAdded(
+      _notes.length - 1,
+      note,
+      noteAddedListeners,
+    );
   }
 
   void _noteRemoved(int _, Note note) {
