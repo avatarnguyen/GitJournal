@@ -13,7 +13,7 @@ import 'notes_folder_config.dart';
 
 export 'notes_folder_config.dart';
 
-abstract class NotesFolder implements NotesFolderObserver {
+abstract class NotesFolder with NotesFolderObserver, NotesObserver {
   bool get isEmpty;
   bool get hasNotes;
   String get name;
@@ -25,6 +25,69 @@ abstract class NotesFolder implements NotesFolderObserver {
   NotesFolder? get fsFolder;
 
   NotesFolderConfig get config;
+}
+
+class NotesObserver {
+  final ObserverList<void Function(int, Note)>? _noteAddedListeners =
+      ObserverList<NoteNotificationCallback>();
+  final ObserverList<void Function(int, Note)>? _noteRemovedListeners =
+      ObserverList<NoteNotificationCallback>();
+  final ObserverList<void Function(int, Note)>? _noteModifiedListeners =
+      ObserverList<NoteNotificationCallback>();
+  final ObserverList<void Function(int, Note, String)>? _noteRenameListeners =
+      ObserverList<NoteRenamedCallback>();
+
+  void addNoteAddedListener(NoteNotificationCallback listener) {
+    if (_noteAddedListeners != null) {
+      _noteAddedListeners!.add(listener);
+    }
+  }
+
+  void removeNoteAddedListener(NoteNotificationCallback listener) {
+    if (_noteAddedListeners != null) {
+      assert(_noteAddedListeners!.contains(listener));
+      var _ = _noteAddedListeners!.remove(listener);
+    }
+  }
+
+  void addNoteRemovedListener(NoteNotificationCallback listener) {
+    if (_noteRemovedListeners != null) {
+      _noteRemovedListeners!.add(listener);
+    }
+  }
+
+  void removeNoteRemovedListener(NoteNotificationCallback listener) {
+    if (_noteRemovedListeners != null) {
+      assert(_noteRemovedListeners!.contains(listener));
+      var _ = _noteRemovedListeners!.remove(listener);
+    }
+  }
+
+  void addNoteModifiedListener(NoteNotificationCallback listener) {
+    if (_noteModifiedListeners != null) {
+      _noteModifiedListeners!.add(listener);
+    }
+  }
+
+  void removeNoteModifiedListener(NoteNotificationCallback listener) {
+    if (_noteModifiedListeners != null) {
+      assert(_noteModifiedListeners!.contains(listener));
+      var _ = _noteModifiedListeners!.remove(listener);
+    }
+  }
+
+  void addNoteRenameListener(NoteRenamedCallback listener) {
+    if (_noteRenameListeners != null) {
+      _noteRenameListeners!.add(listener);
+    }
+  }
+
+  void removeNoteRenameListener(NoteRenamedCallback listener) {
+    if (_noteRenameListeners != null) {
+      assert(_noteRenameListeners!.contains(listener));
+      var _ = _noteRenameListeners!.remove(listener);
+    }
+  }
 }
 
 class NotesFolderObserver {
