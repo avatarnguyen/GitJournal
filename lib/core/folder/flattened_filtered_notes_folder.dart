@@ -4,16 +4,15 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import 'package:synchronized/synchronized.dart';
-
 import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_notifier.dart';
 import 'package:gitjournal/core/note.dart';
+import 'package:synchronized/synchronized.dart';
 
 typedef NotesFilter = Future<bool> Function(Note note);
 
-class FlattenedFilteredNotesFolder
-    with NotesFolderNotifier
+class FlattenedFilteredNotesFolder extends NotesFolderNotifier
+    with NotesFolderObserverImpl
     implements NotesFolder {
   final NotesFolder _parentFolder;
   final NotesFilter filter;
@@ -98,11 +97,11 @@ class FlattenedFilteredNotesFolder
       // The filtering is async so we need to check again
       var contain = _notes.indexWhere((n) => n.filePath == note.filePath) != -1;
       if (contain) {
-        notifyNoteModified(-1, note);
+        notifyNoteModified(-1, note, noteModifiedListeners);
         return;
       }
       _notes.add(note);
-      notifyNoteAdded(-1, note);
+      notifyNoteAdded(-1, note, noteAddedListeners);
     });
   }
 
@@ -115,7 +114,7 @@ class FlattenedFilteredNotesFolder
       }
 
       var _ = _notes.removeAt(i);
-      notifyNoteRemoved(-1, note);
+      notifyNoteRemoved(-1, note, noteRemovedListeners);
     });
   }
 
@@ -125,21 +124,21 @@ class FlattenedFilteredNotesFolder
       if (i != -1) {
         if (await filter(note)) {
           _notes[i] = note;
-          notifyNoteModified(-1, note);
+          notifyNoteModified(-1, note, noteModifiedListeners);
         } else {
           await _noteRemoved(-1, note);
         }
       } else {
         if (await filter(note)) {
           _notes.add(note);
-          notifyNoteAdded(-1, note);
+          notifyNoteAdded(-1, note, noteAddedListeners);
         }
       }
     });
   }
 
   void _noteRenamed(int _, Note note, String oldPath) {
-    notifyNoteRenamed(-1, note, oldPath);
+    notifyNoteRenamed(-1, note, oldPath, noteRenameListeners);
   }
 
   @override
