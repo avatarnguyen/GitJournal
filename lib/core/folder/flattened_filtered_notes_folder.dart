@@ -41,24 +41,41 @@ class FlattenedFilteredNotesFolder extends NotesFolderNotifier
   Future<void> _addFolder(NotesFolder folder) async {
     _folders.add(folder);
 
-    // Add Change notifiers
-    folder.addFolderAddedListener(_folderAdded);
-    folder.addFolderRemovedListener(_folderRemoved);
+    _addChangeNotifierListener(folder);
 
+    await _addIndividualNotes(folder);
+
+    await _addSubFolders(folder);
+  }
+
+  Future<void> _addSubFolders(NotesFolder folder) async {
+    for (var folder in folder.subFolders) {
+      await _addFolder(folder);
+    }
+  }
+
+  Future<void> _addIndividualNotes(NotesFolder folder) async {
+    for (var note in folder.notes) {
+      await _noteAdded(-1, note);
+    }
+  }
+
+  void _addChangeNotifierListener(NotesFolder folder) {
+    _addFolderListenerCallback(folder);
+
+    _addNoteListenerCallback(folder);
+  }
+
+  void _addNoteListenerCallback(NotesFolder folder) {
     folder.addNoteAddedListener(_noteAdded);
     folder.addNoteRemovedListener(_noteRemoved);
     folder.addNoteModifiedListener(_noteModified);
     folder.addNoteRenameListener(_noteRenamed);
+  }
 
-    // Add Individual Notes
-    for (var note in folder.notes) {
-      await _noteAdded(-1, note);
-    }
-
-    // Add Sub-Folders
-    for (var folder in folder.subFolders) {
-      await _addFolder(folder);
-    }
+  void _addFolderListenerCallback(NotesFolder folder) {
+    folder.addFolderAddedListener(_folderAdded);
+    folder.addFolderRemovedListener(_folderRemoved);
   }
 
   @override
@@ -78,13 +95,24 @@ class FlattenedFilteredNotesFolder extends NotesFolderNotifier
     //
     // FIXME: Wouldn't all the notes from this folder also need to be removed?
     //
-    folder.removeFolderAddedListener(_folderAdded);
-    folder.removeFolderRemovedListener(_folderRemoved);
+    _removeChangeNotifierListener(folder);
+  }
 
+  void _removeChangeNotifierListener(NotesFolder folder) {
+    _removeFolderListenerCallback(folder);
+    _removeNoteListenerCallback(folder);
+  }
+
+  void _removeNoteListenerCallback(NotesFolder folder) {
     folder.removeNoteAddedListener(_noteAdded);
     folder.removeNoteRemovedListener(_noteRemoved);
     folder.removeNoteModifiedListener(_noteModified);
     folder.removeNoteRenameListener(_noteRenamed);
+  }
+
+  void _removeFolderListenerCallback(NotesFolder folder) {
+    folder.removeFolderAddedListener(_folderAdded);
+    folder.removeFolderRemovedListener(_folderRemoved);
   }
 
   Future<void> _noteAdded(int _, Note note) async {
