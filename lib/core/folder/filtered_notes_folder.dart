@@ -4,15 +4,16 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import 'package:synchronized/synchronized.dart';
-
 import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_notifier.dart';
 import 'package:gitjournal/core/note.dart';
+import 'package:synchronized/synchronized.dart';
 
 typedef NotesFilter = Future<bool> Function(Note note);
 
-class FilteredNotesFolder with NotesFolderNotifier implements NotesFolder {
+class FilteredNotesFolder extends NotesFolderNotifier
+    with NotesFolderObserverImpl
+    implements NotesFolder {
   final NotesFolder folder;
   final NotesFilter filter;
   final String title;
@@ -35,12 +36,22 @@ class FilteredNotesFolder with NotesFolderNotifier implements NotesFolder {
   }
 
   Future<void> _addFolder(NotesFolder folder) async {
+    _addChangeNotifierListener(folder);
+    await _addIndividualNotes(folder);
+  }
+
+  void _addChangeNotifierListener(NotesFolder folder) {
+    _addNoteListenerCallback(folder);
+  }
+
+  void _addNoteListenerCallback(NotesFolder folder) {
     folder.addNoteAddedListener(_noteAdded);
     folder.addNoteRemovedListener(_noteRemoved);
     folder.addNoteModifiedListener(_noteModified);
     folder.addNoteRenameListener(_noteRenamed);
+  }
 
-    // Add Individual Notes
+  Future<void> _addIndividualNotes(NotesFolder folder) async {
     for (var note in folder.notes) {
       await _noteAdded(-1, note);
     }
@@ -48,6 +59,7 @@ class FilteredNotesFolder with NotesFolderNotifier implements NotesFolder {
 
   Future<void> _noteAdded(int _, Note note) async {
     var shouldAllow = await filter(note);
+    print("Filter shouldAllow: $shouldAllow");
     if (!shouldAllow) {
       return;
     }
@@ -56,11 +68,15 @@ class FilteredNotesFolder with NotesFolderNotifier implements NotesFolder {
       // The filtering is async so we need to check again
       var contain = _notes.indexWhere((n) => n.filePath == note.filePath) != -1;
       if (contain) {
-        notifyNoteModified(-1, note);
+        notifyNoteModified(
+          -1,
+          note,
+          noteModifiedListeners,
+        );
         return;
       }
       _notes.add(note);
-      notifyNoteAdded(-1, note);
+      notifyNoteAdded(-1, note, noteAddedListeners);
     });
   }
 
@@ -73,7 +89,7 @@ class FilteredNotesFolder with NotesFolderNotifier implements NotesFolder {
       }
 
       var _ = _notes.removeAt(i);
-      notifyNoteRemoved(-1, note);
+      notifyNoteRemoved(-1, note, noteRemovedListeners);
     });
   }
 
@@ -82,21 +98,21 @@ class FilteredNotesFolder with NotesFolderNotifier implements NotesFolder {
       var contain = _notes.indexWhere((n) => n.filePath == note.filePath) != -1;
       if (contain) {
         if (await filter(note)) {
-          notifyNoteModified(-1, note);
+          notifyNoteModified(-1, note, noteModifiedListeners);
         } else {
           _noteRemoved(-1, note);
         }
       } else {
         if (await filter(note)) {
           _notes.add(note);
-          notifyNoteAdded(-1, note);
+          notifyNoteAdded(-1, note, noteAddedListeners);
         }
       }
     });
   }
 
   void _noteRenamed(int _, Note note, String oldPath) {
-    notifyNoteRenamed(-1, note, oldPath);
+    notifyNoteRenamed(-1, note, oldPath, noteRenameListeners);
   }
 
   @override
