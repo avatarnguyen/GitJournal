@@ -4,7 +4,6 @@ import 'package:dart_git/dart_git.dart';
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/core/folder/filtered_notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder.dart';
-import 'package:gitjournal/core/folder/notes_folder_config.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';

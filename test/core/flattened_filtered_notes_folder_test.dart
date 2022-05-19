@@ -7,11 +7,6 @@
 import 'dart:math';
 
 import 'package:dart_git/dart_git.dart';
-import 'package:path/path.dart' as p;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:test/test.dart';
-import 'package:universal_io/io.dart' as io;
-
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/core/folder/flattened_filtered_notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_config.dart';
@@ -19,6 +14,11 @@ import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/core/notes/note.dart';
+import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test/test.dart';
+import 'package:universal_io/io.dart' as io;
+
 import '../lib.dart';
 
 void main() {
@@ -72,8 +72,11 @@ void main() {
       var sub1Folder = NotesFolderFS(rootFolder, "sub1", config);
       for (var i = 0; i < 2; i++) {
         var fp = _getRandomFilePath(sub1Folder.fullFolderPath);
-        var note = Note.newNote(sub1Folder,
-            fileName: p.basename(fp), fileFormat: NoteFileFormat.Markdown);
+        var note = Note.newNote(
+          sub1Folder,
+          fileName: p.basename(fp),
+          fileFormat: NoteFileFormat.Markdown,
+        );
 
         note = note.copyWith(
           modified: DateTime(2020, 1, 10 + (i * 2)),
@@ -131,15 +134,16 @@ void main() {
     });
 
     test('Basic Filter should work', () async {
-      var f = await FlattenedFilteredNotesFolder.load(
+      final _flattenedFilteredNotesFolder =
+          await FlattenedFilteredNotesFolder.load(
         rootFolder,
         title: "foo",
         filter: (Note note) async => note.body.contains('sub'),
       );
-      expect(f.subFolders.length, 0);
-      expect(f.notes.length, 4);
+      expect(_flattenedFilteredNotesFolder.subFolders.length, 0);
+      expect(_flattenedFilteredNotesFolder.notes.length, 4);
 
-      var notes = List<Note>.from(f.notes);
+      final notes = List<Note>.from(_flattenedFilteredNotesFolder.notes);
       notes.sort((Note n1, Note n2) => n1.body.compareTo(n2.body));
 
       expect(notes[0].body, "sub1-0\n");
@@ -148,8 +152,55 @@ void main() {
       expect(notes[3].body, "sub2-1\n");
     });
 
-    // Test adding a note
-    // Test removing a note
+    test('should remove a note from folder', () async {
+      // arrange
+      final _flattenedFilteredNotesFolder =
+          await FlattenedFilteredNotesFolder.load(
+        rootFolder,
+        title: "foo",
+        filter: (Note note) async => note.body.contains('sub'),
+      );
+      expect(_flattenedFilteredNotesFolder.notes.length, 4);
+
+      // act
+      rootFolder.subFoldersFS.first
+          .remove(_flattenedFilteredNotesFolder.notes.first);
+
+      // assert
+      expect(_flattenedFilteredNotesFolder.notes.length, 3);
+    });
+
+    test('should add a new note to a subfolder', () async {
+      // arrange
+      final _flattenedFilteredNotesFolder =
+          await FlattenedFilteredNotesFolder.load(
+        rootFolder,
+        title: "foo",
+        filter: (Note note) async => note.body.contains('sub'),
+      );
+      expect(_flattenedFilteredNotesFolder.notes.length, 4);
+
+      // act
+      final firstSubfolder = rootFolder.subFoldersFS.first;
+      final fp = _getRandomFilePath(firstSubfolder.fullFolderPath);
+      var note = Note.newNote(
+        firstSubfolder,
+        fileName: p.basename(fp),
+        fileFormat: NoteFileFormat.Markdown,
+      );
+
+      note = note.copyWith(
+        modified: DateTime.now(),
+        body: "sub_test",
+      );
+      note = await NoteStorage.save(note).getOrThrow();
+      firstSubfolder.add(note);
+
+      await firstSubfolder.fileStorage.reload().throwOnError();
+      expect(_flattenedFilteredNotesFolder.notes.length, 5);
+    });
+
+    // TODO
     // Test loading it incrementally
     // Test renaming a file
   });
