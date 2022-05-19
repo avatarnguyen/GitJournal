@@ -8,11 +8,14 @@ import 'dart:math';
 
 import 'package:gitjournal/core/folder/sorting_mode.dart';
 import 'package:gitjournal/logger/logger.dart';
+
 import '../note.dart';
 import 'notes_folder.dart';
 import 'notes_folder_notifier.dart';
 
-class SortedNotesFolder with NotesFolderNotifier implements NotesFolder {
+class SortedNotesFolder extends NotesFolderNotifier
+    with NotesFolderObserverImpl
+    implements NotesFolder {
   final NotesFolder folder;
 
   late SortingMode _sortingMode;
@@ -24,12 +27,20 @@ class SortedNotesFolder with NotesFolderNotifier implements NotesFolder {
     required this.folder,
     required SortingMode sortingMode,
   }) {
+    _sortNotes(sortingMode);
+
+    _addChangeNotifierListener();
+  }
+
+  void _sortNotes(SortingMode sortingMode) {
     _sortingMode = sortingMode;
     _sortFunc = _sortingMode.sortingFunction();
 
     _notes = List<Note>.from(folder.notes);
     _notes.sort(_sortFunc);
+  }
 
+  void _addChangeNotifierListener() {
     folder.addFolderAddedListener(_folderAddedListener);
     folder.addFolderRemovedListener(_folderRemovedListener);
 
@@ -41,6 +52,12 @@ class SortedNotesFolder with NotesFolderNotifier implements NotesFolder {
 
   @override
   void dispose() {
+    _removeChangeNotifierListener();
+
+    super.dispose();
+  }
+
+  void _removeChangeNotifierListener() {
     folder.removeFolderAddedListener(_folderAddedListener);
     folder.removeFolderRemovedListener(_folderRemovedListener);
 
@@ -48,23 +65,21 @@ class SortedNotesFolder with NotesFolderNotifier implements NotesFolder {
     folder.removeNoteRemovedListener(_noteRemovedListener);
     folder.removeNoteModifiedListener(_noteModifiedListener);
     folder.removeNoteRenameListener(_noteRenamedListener);
-
-    super.dispose();
   }
 
   void _folderAddedListener(int index, NotesFolder folder) {
-    notifyFolderAdded(index, folder);
+    notifyFolderAdded(index, folder, folderAddedListeners);
   }
 
   void _folderRemovedListener(int index, NotesFolder folder) {
-    notifyFolderRemoved(index, folder);
+    notifyFolderRemoved(index, folder, folderRemovedListeners);
   }
 
   void _noteAddedListener(int _, Note note) {
     assert(folder.notes.length == _notes.length + 1);
 
     var i = _insertInCorrectPos(note);
-    notifyNoteAdded(i, note);
+    notifyNoteAdded(i, note, noteAddedListeners);
   }
 
   void _noteRemovedListener(int _, Note note) {
@@ -74,7 +89,7 @@ class SortedNotesFolder with NotesFolderNotifier implements NotesFolder {
     assert(index != -1);
     var _ = _notes.removeAt(index);
 
-    notifyNoteRemoved(index, note);
+    notifyNoteRemoved(index, note, noteRemovedListeners);
   }
 
   void _noteModifiedListener(int _, Note note) {
@@ -90,11 +105,11 @@ class SortedNotesFolder with NotesFolderNotifier implements NotesFolder {
     _ = _notes.removeAt(i);
     _ = _insertInCorrectPos(note);
 
-    notifyNoteModified(-1, note);
+    notifyNoteModified(-1, note, noteModifiedListeners);
   }
 
   void _noteRenamedListener(int _, Note note, String oldPath) {
-    notifyNoteRenamed(-1, note, oldPath);
+    notifyNoteRenamed(-1, note, oldPath, noteRenameListeners);
   }
 
   int _insertInCorrectPos(Note note) {
