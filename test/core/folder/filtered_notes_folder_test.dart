@@ -9,7 +9,7 @@ import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/core/notes/note.dart';
-import 'package:path/path.dart' as p;
+import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test/test.dart';
 import 'package:universal_io/io.dart' as io;
@@ -23,7 +23,7 @@ void main() {
 
   String _getRandomFilePath(String basePath) {
     while (true) {
-      var filePath = p.join(basePath, "${random.nextInt(1000)}.md");
+      var filePath = path.join(basePath, "${random.nextInt(1000)}.md");
       if (io.File(filePath).existsSync()) {
         continue;
       }
@@ -42,7 +42,7 @@ void main() {
     setUp(() async {
       tempDir = await io.Directory.systemTemp
           .createTemp('__filtered_notes_folder_test__');
-      repoPath = tempDir.path + p.separator;
+      repoPath = tempDir.path + path.separator;
 
       SharedPreferences.setMockInitialValues({});
       config = NotesFolderConfig('', await SharedPreferences.getInstance());
@@ -53,7 +53,7 @@ void main() {
       for (var i = 0; i < 3; i++) {
         var fp = _getRandomFilePath(rootFolder.fullFolderPath);
         var note = Note.newNote(rootFolder,
-            fileName: p.basename(fp), fileFormat: NoteFileFormat.Markdown);
+            fileName: path.basename(fp), fileFormat: NoteFileFormat.Markdown);
         note = note.copyWith(
           modified: DateTime(2020, 1, 10 + (i * 2)),
           body: "$i\n",
@@ -61,20 +61,22 @@ void main() {
         note = await NoteStorage.save(note).getOrThrow();
       }
 
-      io.Directory(p.join(repoPath, "sub1")).createSync();
-      io.Directory(p.join(repoPath, "sub1", "p1")).createSync();
-      io.Directory(p.join(repoPath, "sub2")).createSync();
+      io.Directory(path.join(repoPath, "sub1")).createSync();
+      io.Directory(path.join(repoPath, "sub1", "p1")).createSync();
+      io.Directory(path.join(repoPath, "sub2")).createSync();
 
       var sub1Folder = NotesFolderFS(rootFolder, "sub1", config);
       for (var i = 0; i < 2; i++) {
         var fp = _getRandomFilePath(sub1Folder.fullFolderPath);
         var note = Note.newNote(sub1Folder,
-            fileName: p.basename(fp), fileFormat: NoteFileFormat.Markdown);
+            fileName: path.basename(fp), fileFormat: NoteFileFormat.Markdown);
 
         note = note.copyWith(
           modified: DateTime(2020, 1, 10 + (i * 2)),
           body: "sub1-$i\n",
         );
+        print("Note: $note");
+
         note = await NoteStorage.save(note).getOrThrow();
       }
 
@@ -82,7 +84,7 @@ void main() {
       for (var i = 0; i < 2; i++) {
         var fp = _getRandomFilePath(sub2Folder.fullFolderPath);
         var note = Note.newNote(sub2Folder,
-            fileName: p.basename(fp), fileFormat: NoteFileFormat.Markdown);
+            fileName: path.basename(fp), fileFormat: NoteFileFormat.Markdown);
 
         note = note.copyWith(
           modified: DateTime(2020, 1, 10 + (i * 2)),
@@ -91,11 +93,11 @@ void main() {
         note = await NoteStorage.save(note).getOrThrow();
       }
 
-      var p1Folder = NotesFolderFS(sub1Folder, p.join("sub1", "p1"), config);
+      var p1Folder = NotesFolderFS(sub1Folder, path.join("sub1", "p1"), config);
       for (var i = 0; i < 2; i++) {
         var fp = _getRandomFilePath(p1Folder.fullFolderPath);
         var note = Note.newNote(p1Folder,
-            fileName: p.basename(fp), fileFormat: NoteFileFormat.Markdown);
+            fileName: path.basename(fp), fileFormat: NoteFileFormat.Markdown);
 
         note = note.copyWith(
           modified: DateTime(2020, 1, 10 + (i * 2)),
@@ -133,18 +135,15 @@ void main() {
       final filteredNoteFolders = await FilteredNotesFolder.load(
         rootFolder,
         title: "foo",
-        filter: (Note note) async => note.body.contains('sub'),
+        filter: (Note note) async => true,
       );
       expect(filteredNoteFolders.subFolders.length, 2);
-      expect(filteredNoteFolders.notes.length, 0);
+      expect(filteredNoteFolders.notes.length, 3);
 
-      // final notes = List<Note>.from(filteredNoteFolders.notes);
-      // notes.sort((Note n1, Note n2) => n1.body.compareTo(n2.body));
-      //
-      // expect(notes[0].body, "sub1-0\n");
-      // expect(notes[1].body, "sub1-1\n");
-      // expect(notes[2].body, "sub2-0\n");
-      // expect(notes[3].body, "sub2-1\n");
+      final _subFolders =
+          List<NotesFolder>.from(filteredNoteFolders.subFolders);
+      expect(_subFolders[0].name, "sub1");
+      expect(_subFolders[1].name, "sub2");
     });
   });
 }

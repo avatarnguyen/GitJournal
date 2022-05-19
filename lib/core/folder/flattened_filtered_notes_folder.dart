@@ -117,7 +117,6 @@ class FlattenedFilteredNotesFolder extends NotesFolderNotifier
 
   Future<void> _noteAdded(int _, Note note) async {
     var shouldAllow = await filter(note);
-    print("Filter shouldAllow: $shouldAllow");
     if (!shouldAllow) {
       return;
     }
