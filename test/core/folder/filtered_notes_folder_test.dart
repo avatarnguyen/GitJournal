@@ -55,7 +55,7 @@ void main() {
             fileName: path.basename(fp), fileFormat: NoteFileFormat.Markdown);
         note = note.copyWith(
           modified: DateTime(2020, 1, 10 + (i * 2)),
-          body: "$i\n",
+          body: "note_$i\n",
         );
         note = await NoteStorage.save(note).getOrThrow();
       }
@@ -74,7 +74,6 @@ void main() {
           modified: DateTime(2020, 1, 10 + (i * 2)),
           body: "sub1-$i\n",
         );
-        print("Note: $note");
 
         note = await NoteStorage.save(note).getOrThrow();
       }
@@ -134,10 +133,10 @@ void main() {
       final filteredNoteFolders = await FilteredNotesFolder.load(
         rootFolder,
         title: "foo",
-        filter: (Note note) async => true,
+        filter: (Note note) async => note.body.contains("note_1"),
       );
       expect(filteredNoteFolders.subFolders.length, 2);
-      expect(filteredNoteFolders.notes.length, 3);
+      expect(filteredNoteFolders.notes.length, 1);
 
       final _subFolders =
           List<NotesFolder>.from(filteredNoteFolders.subFolders);
