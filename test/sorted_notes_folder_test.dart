@@ -39,7 +39,7 @@ void main() {
         tempDir =
             await io.Directory.systemTemp.createTemp('__sorted_folder_test__');
         repoPath = tempDir.path + p.separator;
-        print('Dir: $tempDir - Path: $repoPath');
+        print('Path: $repoPath');
 
         SharedPreferences.setMockInitialValues({});
         config = NotesFolderConfig('', await SharedPreferences.getInstance());
