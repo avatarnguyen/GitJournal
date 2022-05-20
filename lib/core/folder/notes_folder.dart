@@ -72,20 +72,20 @@ abstract class NotesFolderObserver {
 }
 
 class NotesFolderObserverImpl {
-  final ObserverList<void Function(int, NotesFolder)>? _folderAddedListeners =
+  ObserverList<void Function(int, NotesFolder)>? _folderAddedListeners =
       ObserverList<FolderNotificationCallback>();
-  final ObserverList<void Function(int, NotesFolder)>? _folderRemovedListeners =
+  ObserverList<void Function(int, NotesFolder)>? _folderRemovedListeners =
       ObserverList<FolderNotificationCallback>();
-  final ObserverList<void Function(NotesFolderFS, String)>?
+  ObserverList<void Function(NotesFolderFS, String)>?
       _thisFolderRenamedListeners = ObserverList<FolderRenamedCallback>();
 
-  final ObserverList<void Function(int, Note)>? _noteAddedListeners =
+  ObserverList<void Function(int, Note)>? _noteAddedListeners =
       ObserverList<NoteNotificationCallback>();
-  final ObserverList<void Function(int, Note)>? _noteRemovedListeners =
+  ObserverList<void Function(int, Note)>? _noteRemovedListeners =
       ObserverList<NoteNotificationCallback>();
-  final ObserverList<void Function(int, Note)>? _noteModifiedListeners =
+  ObserverList<void Function(int, Note)>? _noteModifiedListeners =
       ObserverList<NoteNotificationCallback>();
-  final ObserverList<void Function(int, Note, String)>? _noteRenameListeners =
+  ObserverList<void Function(int, Note, String)>? _noteRenameListeners =
       ObserverList<NoteRenamedCallback>();
 
   // Folder
@@ -195,5 +195,15 @@ class NotesFolderObserverImpl {
       assert(_thisFolderRenamedListeners!.contains(listener));
       var _ = _thisFolderRenamedListeners!.remove(listener);
     }
+  }
+
+  void disposeNotesFolderObserver() {
+    _folderAddedListeners = null;
+    _folderRemovedListeners = null;
+    _thisFolderRenamedListeners = null;
+    _noteAddedListeners = null;
+    _noteRemovedListeners = null;
+    _noteModifiedListeners = null;
+    _noteRenameListeners = null;
   }
 }
