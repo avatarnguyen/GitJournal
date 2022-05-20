@@ -25,9 +25,7 @@ import '../file/ignored_file.dart';
 import '../note.dart';
 import 'notes_folder.dart';
 
-class NotesFolderFS extends NotesFolderNotifier
-    with NotesFolderObserverImpl
-    implements NotesFolder {
+class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
   final NotesFolderFS? _parent;
   String _folderPath;
   final _lock = Lock();

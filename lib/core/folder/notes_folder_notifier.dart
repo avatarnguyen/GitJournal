@@ -18,7 +18,9 @@ typedef NoteNotificationCallback = void Function(int index, Note note);
 typedef NoteRenamedCallback = void Function(
     int index, Note note, String oldPath);
 
-class NotesFolderNotifier implements ChangeNotifier {
+class NotesFolderNotifier
+    with NotesFolderObserverImpl
+    implements ChangeNotifier {
   // ObserverList<void Function(int, NotesFolder)>? _folderAddedListeners =
   //     ObserverList<FolderNotificationCallback>();
   // ObserverList<void Function(int, NotesFolder)>? _folderRemovedListeners =

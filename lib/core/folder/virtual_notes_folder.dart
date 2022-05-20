@@ -8,9 +8,7 @@ import '../note.dart';
 import 'notes_folder.dart';
 import 'notes_folder_notifier.dart';
 
-class VirtualNotesFolder extends NotesFolderNotifier
-    with NotesFolderObserverImpl
-    implements NotesFolder {
+class VirtualNotesFolder extends NotesFolderNotifier implements NotesFolder {
   final List<Note> _notes;
   final NotesFolderConfig _config;
 

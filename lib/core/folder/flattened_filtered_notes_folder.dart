@@ -12,7 +12,6 @@ import 'package:synchronized/synchronized.dart';
 typedef NotesFilter = Future<bool> Function(Note note);
 
 class FlattenedFilteredNotesFolder extends NotesFolderNotifier
-    with NotesFolderObserverImpl
     implements NotesFolder {
   final NotesFolder _parentFolder;
   final NotesFilter filter;

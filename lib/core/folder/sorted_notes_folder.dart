@@ -13,9 +13,7 @@ import '../note.dart';
 import 'notes_folder.dart';
 import 'notes_folder_notifier.dart';
 
-class SortedNotesFolder extends NotesFolderNotifier
-    with NotesFolderObserverImpl
-    implements NotesFolder {
+class SortedNotesFolder extends NotesFolderNotifier implements NotesFolder {
   final NotesFolder folder;
 
   late SortingMode _sortingMode;
