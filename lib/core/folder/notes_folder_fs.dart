@@ -284,15 +284,19 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
 
   Future<Result<void>> load() => _lock.synchronized(_load);
 
+  var newEntityMap = <String, dynamic>{};
+  var newFiles = <File>[];
+  var newFolders = <NotesFolderFS>[];
+
   Future<Result<void>> _load() async {
+    newEntityMap = {};
+    newFiles = [];
+    newFolders = [];
+
     if (io.File(_getIgnoredPath()).existsSync()) {
       Log.i("Ignoring $folderPath as it has .gitignore");
       return Result(null);
     }
-
-    var newEntityMap = <String, dynamic>{};
-    var newFiles = <File>[];
-    var newFolders = <NotesFolderFS>[];
 
     final dir = io.Directory(fullFolderPath);
     var lister = dir.list(recursive: false, followLinks: false);
@@ -305,11 +309,8 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       var filePath = fsEntity.path.substring(repoPath.length);
 
       if (fsEntity is io.Directory) {
-        var subFolder = NotesFolderFS(this, filePath, _config);
-        if (subFolder.name.startsWith('.')) {
-          continue;
-        }
-        _addNewFolderAndEntity(newFolders, subFolder, newEntityMap, filePath);
+        print('Directory');
+        _handleDirectoryEntity(filePath);
         continue;
       }
 
@@ -328,74 +329,82 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
 
       var fileName = path.basename(filePath);
       if (fileName.startsWith('.')) {
-        var ignoredFile = IgnoredFile(
-          file: file,
+        print('Ignore File');
+        _handleIgnoreOrInvalidFile(
+          file,
+          filePath,
           reason: IgnoreReason.HiddenFile,
         );
-
-        newFiles.add(ignoredFile);
-        newEntityMap[filePath] = ignoredFile;
         continue;
       }
 
       var formatInfo = NoteFileFormatInfo(config);
       if (!formatInfo.isAllowedFileName(filePath)) {
-        var ignoredFile = IgnoredFile(
-          file: file,
+        print('Invalid File');
+        _handleIgnoreOrInvalidFile(
+          file,
+          filePath,
           reason: IgnoreReason.InvalidExtension,
         );
-
-        newFiles.add(ignoredFile);
-        newEntityMap[filePath] = ignoredFile;
         continue;
       }
 
-      // Log.v("Found file", props: {"path": filePath});
-      var fileToBeProcessed = UnopenedFile(
-        file: file,
-        parent: this,
-      );
-
-      newFiles.add(fileToBeProcessed);
-      newEntityMap[filePath] = fileToBeProcessed;
+      _handleUnOpenedFile(file, filePath);
     }
 
     var originalPathsList = _entityMap.keys.toSet();
     var newPathsList = newEntityMap.keys.toSet();
-
     var origEntityMap = _entityMap;
+
     _entityMap = newEntityMap;
     _files = newFiles;
     _folders = newFolders;
 
-    var pathsRemoved = originalPathsList.difference(newPathsList);
-    for (var path in pathsRemoved) {
-      var e = origEntityMap[path];
-      assert(e is NotesFolder || e is File);
+    _removeNoteOrFolder(originalPathsList, newPathsList, origEntityMap);
 
-      if (e is File) {
-        if (e is Note) {
-          notifyNoteRemoved(-1, e, noteRemovedListeners);
-        }
-      } else {
-        _removeFolderListeners(e);
-        notifyFolderRemoved(-1, e, folderRemovedListeners);
-      }
+    _addNoteOrFolder(newPathsList, originalPathsList);
+
+    _handlePossibleChangesOfNoteOrFolder(
+        newPathsList, originalPathsList, origEntityMap);
+
+    return Result(null);
+  }
+
+  void _handleUnOpenedFile(File file, String filePath) {
+    var fileToBeProcessed = UnopenedFile(
+      file: file,
+      parent: this,
+    );
+
+    newFiles.add(fileToBeProcessed);
+    newEntityMap[filePath] = fileToBeProcessed;
+  }
+
+  void _handleIgnoreOrInvalidFile(
+    File file,
+    String filePath, {
+    required IgnoreReason reason,
+  }) {
+    var ignoredFile = IgnoredFile(
+      file: file,
+      reason: reason,
+    );
+
+    newFiles.add(ignoredFile);
+    newEntityMap[filePath] = ignoredFile;
+  }
+
+  void _handleDirectoryEntity(String filePath) {
+    var subFolder = NotesFolderFS(this, filePath, _config);
+    if (subFolder.name.startsWith('.')) {
+      return;
     }
+    newFolders.add(subFolder);
+    newEntityMap[filePath] = subFolder;
+  }
 
-    var pathsAdded = newPathsList.difference(originalPathsList);
-    for (var path in pathsAdded) {
-      var e = _entityMap[path];
-      assert(e is NotesFolder || e is File);
-
-      if (e is File) {
-        assert(e is! Note);
-      } else {
-        _addFolderListeners(e);
-        notifyFolderAdded(-1, e, folderAddedListeners);
-      }
-    }
-
+  void _handlePossibleChangesOfNoteOrFolder(Set<String> newPathsList,
+      Set<String> originalPathsList, Map<String, dynamic> origEntityMap) {
     var pathsPossiblyChanged = newPathsList.intersection(originalPathsList);
     for (var i = 0; i < _files.length; i++) {
       var filePath = _files[i].filePath;
@@ -407,6 +416,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       assert(ent is File);
 
       if (ent is Note) {
+        print('Note changes');
         assert(ent.oid.isNotEmpty);
         _files[i] = ent;
         _entityMap[ent.filePath] = ent;
@@ -422,21 +432,48 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       var ent = origEntityMap[folderPath];
       assert(ent is NotesFolderFS);
       if (ent is NotesFolderFS) {
+        print('NotesFolderFS');
         _folders[i] = ent;
         _entityMap[ent.folderPath] = ent;
       }
     }
-
-    return Result(null);
   }
 
-  void _addNewFolderAndEntity(
-      List<NotesFolderFS> newFolders,
-      NotesFolderFS subFolder,
-      Map<String, dynamic> newEntityMap,
-      String filePath) {
-    newFolders.add(subFolder);
-    newEntityMap[filePath] = subFolder;
+  void _addNoteOrFolder(
+      Set<String> newPathsList, Set<String> originalPathsList) {
+    var pathsAdded = newPathsList.difference(originalPathsList);
+    for (var path in pathsAdded) {
+      var e = _entityMap[path];
+      assert(e is NotesFolder || e is File);
+
+      if (e is File) {
+        print('File');
+        assert(e is! Note);
+      } else {
+        _addFolderListeners(e);
+        notifyFolderAdded(-1, e, folderAddedListeners);
+      }
+    }
+  }
+
+  void _removeNoteOrFolder(Set<String> originalPathsList,
+      Set<String> newPathsList, Map<String, dynamic> origEntityMap) {
+    var pathsRemoved = originalPathsList.difference(newPathsList);
+    for (var path in pathsRemoved) {
+      var e = origEntityMap[path];
+      assert(e is NotesFolder || e is File);
+
+      if (e is File) {
+        print('File');
+        if (e is Note) {
+          print('Note');
+          notifyNoteRemoved(-1, e, noteRemovedListeners);
+        }
+      } else {
+        _removeFolderListeners(e);
+        notifyFolderRemoved(-1, e, folderRemovedListeners);
+      }
+    }
   }
 
   String _getIgnoredPath() => path.join(fullFolderPath, ".gitignore");

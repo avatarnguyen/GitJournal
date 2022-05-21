@@ -31,13 +31,13 @@ void main() {
   }
 
   Future<void> _addNewNoteToSubFolder(
-    NotesFolderFS subFolder,
+    NotesFolderFS folder,
     String bodyPrefix,
   ) async {
     for (var i = 0; i < 2; i++) {
-      var fp = _getRandomFilePath(subFolder.fullFolderPath);
+      var fp = _getRandomFilePath(folder.fullFolderPath);
       var note = Note.newNote(
-        subFolder,
+        folder,
         fileName: path.basename(fp),
         fileFormat: NoteFileFormat.Markdown,
       );
@@ -68,16 +68,8 @@ void main() {
 
       rootFolder = NotesFolderFS.root(config, fileStorage);
 
-      for (var i = 0; i < 3; i++) {
-        var fp = _getRandomFilePath(rootFolder.fullFolderPath);
-        var note = Note.newNote(rootFolder,
-            fileName: path.basename(fp), fileFormat: NoteFileFormat.Markdown);
-        note = note.copyWith(
-          modified: DateTime(2020, 1, 10 + (i * 2)),
-          body: "$i\n",
-        );
-        note = await NoteStorage.save(note).getOrThrow();
-      }
+      await _addNewNoteToSubFolder(rootFolder, "");
+      await _addNewNoteToSubFolder(rootFolder, ".test_ignore_file");
 
       io.Directory(path.join(repoPath, "sub1")).createSync();
       io.Directory(path.join(repoPath, "sub1", "p1")).createSync();
