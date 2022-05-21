@@ -15,7 +15,7 @@ import 'package:gitjournal/core/views/inline_tags_view.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/utils/result.dart';
-import 'package:path/path.dart' as p;
+import 'package:path/path.dart' as path;
 import 'package:path/path.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:universal_io/io.dart' as io;
@@ -40,8 +40,8 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
   NotesFolderFS(NotesFolderFS parent, this._folderPath, this._config)
       : _parent = parent,
         fileStorage = parent.fileStorage {
-    assert(!_folderPath.startsWith(p.separator));
-    assert(!_folderPath.endsWith(p.separator));
+    assert(!_folderPath.startsWith(path.separator));
+    assert(!_folderPath.endsWith(path.separator));
     assert(_folderPath.isNotEmpty);
   }
 
@@ -58,20 +58,12 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     super.dispose();
   }
 
-  @override
-  NotesFolder? get parent => _parent;
-
-  /// Always ends with a '/'
-  String get repoPath => fileStorage.repoPath;
-
-  NotesFolderFS? get parentFS => _parent;
-
   void _entityChanged() {
     notifyListeners();
   }
 
   void _noteRenamed(Note note, String oldPath) {
-    assert(!oldPath.startsWith(p.separator));
+    assert(!oldPath.startsWith(path.separator));
 
     _lock.synchronized(() {
       assert(_entityMap.containsKey(oldPath));
@@ -88,7 +80,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
   }
 
   void _subFolderRenamed(NotesFolderFS folder, String oldPath) {
-    assert(!oldPath.startsWith(p.separator));
+    assert(!oldPath.startsWith(path.separator));
 
     _lock.synchronized(() {
       assert(_entityMap.containsKey(oldPath));
@@ -102,14 +94,14 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
 
   /// Will never end with '/'
   String get folderPath => _folderPath;
-  String get folderName => p.basename(_folderPath);
+  String get folderName => path.basename(_folderPath);
 
   /// Will never end with '/'
   String get fullFolderPath {
     if (_folderPath.isEmpty) {
       return repoPath.substring(0, repoPath.length - 1);
     }
-    return p.join(repoPath, _folderPath);
+    return path.join(repoPath, _folderPath);
   }
 
   @override
@@ -162,6 +154,39 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     _folders.sort((NotesFolderFS a, NotesFolderFS b) =>
         a.folderPath.compareTo(b.folderPath));
     return _folders;
+  }
+
+  @override
+  NotesFolder? get parent => _parent;
+
+  /// Always ends with a '/'
+  String get repoPath => fileStorage.repoPath;
+
+  NotesFolderFS? get parentFS => _parent;
+
+  @override
+  String get publicName {
+    var spec = folderPath;
+    if (spec.isEmpty) {
+      return tr(LocaleKeys.rootFolder);
+    }
+    return spec;
+  }
+
+  @override
+  NotesFolderConfig get config => _config;
+
+  @override
+  NotesFolder get fsFolder {
+    return this;
+  }
+
+  NotesFolderFS get rootFolder {
+    var folder = this;
+    while (folder.parent != null) {
+      folder = folder.parent as NotesFolderFS;
+    }
+    return folder;
   }
 
   Future<void> loadNotes() async {
@@ -260,9 +285,8 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
   Future<Result<void>> load() => _lock.synchronized(_load);
 
   Future<Result<void>> _load() async {
-    var ignoreFilePath = p.join(fullFolderPath, ".gjignore");
-    if (io.File(ignoreFilePath).existsSync()) {
-      Log.i("Ignoring $folderPath as it has .gjignore");
+    if (io.File(_getIgnoredPath()).existsSync()) {
+      Log.i("Ignoring $folderPath as it has .gitignore");
       return Result(null);
     }
 
@@ -277,7 +301,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
         continue;
       }
 
-      assert(fsEntity.path.startsWith(p.separator));
+      assert(fsEntity.path.startsWith(path.separator));
       var filePath = fsEntity.path.substring(repoPath.length);
 
       if (fsEntity is io.Directory) {
@@ -309,7 +333,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       }
       var file = fileR.getOrThrow();
 
-      var fileName = p.basename(filePath);
+      var fileName = path.basename(filePath);
       if (fileName.startsWith('.')) {
         var ignoredFile = IgnoredFile(
           file: file,
@@ -413,6 +437,8 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     return Result(null);
   }
 
+  String _getIgnoredPath() => path.join(fullFolderPath, ".gitignore");
+
   void add(Note note) {
     assert(note.parent == this);
     assert(note.oid.isNotEmpty);
@@ -448,7 +474,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     try {
       // Git doesn't track Directories, only files, so we create an empty .gitignore file
       // in the directory instead.
-      var gitIgnoreFilePath = p.join(fullFolderPath, ".gitignore");
+      var gitIgnoreFilePath = _getIgnoredPath();
       var file = io.File(gitIgnoreFilePath);
       if (!file.existsSync()) {
         file.createSync(recursive: true);
@@ -498,8 +524,8 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
 
     var oldPath = folderPath;
     var dir = io.Directory(fullFolderPath);
-    _folderPath = p.join(dirname(oldPath), newName);
-    assert(!_folderPath.endsWith(p.separator));
+    _folderPath = path.join(dirname(oldPath), newName);
+    assert(!_folderPath.endsWith(path.separator));
 
     if (io.Directory(fullFolderPath).existsSync()) {
       throw Exception("Directory already exists");
@@ -529,15 +555,6 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     folder.removeThisFolderRenamedListener(_subFolderRenamed);
   }
 
-  @override
-  String get publicName {
-    var spec = folderPath;
-    if (spec.isEmpty) {
-      return tr(LocaleKeys.rootFolder);
-    }
-    return spec;
-  }
-
   Iterable<Note> getAllNotes() sync* {
     for (var f in _files) {
       if (f is Note) {
@@ -551,11 +568,6 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
         yield note;
       }
     }
-  }
-
-  @override
-  NotesFolder get fsFolder {
-    return this;
   }
 
   NotesFolderFS? getFolderWithSpec(String spec) {
@@ -573,16 +585,16 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
   }
 
   NotesFolderFS getOrBuildFolderWithSpec(String spec) {
-    assert(!spec.startsWith(p.separator));
+    assert(!spec.startsWith(path.separator));
     if (spec == '.') {
       return this;
     }
 
-    var components = spec.split(p.separator);
+    var components = spec.split(path.separator);
     var folder = this;
     for (var i = 0; i < components.length; i++) {
       var c = components.sublist(0, i + 1);
-      var folderPath = c.join(p.separator);
+      var folderPath = c.join(path.separator);
 
       var folders = folder.subFoldersFS;
       var folderIndex = folders.indexWhere((f) => f.folderPath == folderPath);
@@ -599,18 +611,10 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     return folder;
   }
 
-  NotesFolderFS get rootFolder {
-    var folder = this;
-    while (folder.parent != null) {
-      folder = folder.parent as NotesFolderFS;
-    }
-    return folder;
-  }
-
   Note? getNoteWithSpec(String spec) {
     // FIXME: Once each note is stored with the spec as the path, this becomes
     //        so much easier!
-    var parts = spec.split(p.separator);
+    var parts = spec.split(path.separator);
 
     var folder = this;
     while (parts.length != 1) {
@@ -640,9 +644,6 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
 
     return null;
   }
-
-  @override
-  NotesFolderConfig get config => _config;
 
   Future<ISet<String>> getNoteTagsRecursively(
     InlineTagsView inlineTagsView,
@@ -696,7 +697,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
   }
 
   static Result<Note> moveNote(Note note, NotesFolderFS destFolder) {
-    var destPath = p.join(destFolder.fullFolderPath, note.fileName);
+    var destPath = path.join(destFolder.fullFolderPath, note.fileName);
     if (io.File(destPath).existsSync()) {
       var ex = Exception('Note Destination Exists');
       return Result.fail(ex);
