@@ -6,6 +6,7 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:flutter/foundation.dart';
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/core/file/unopened_files.dart';
 import 'package:gitjournal/core/folder/notes_folder_notifier.dart';
@@ -299,7 +300,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     }
 
     final dir = io.Directory(fullFolderPath);
-    var lister = dir.list(recursive: false, followLinks: false);
+    var lister = dir.list(followLinks: false);
     await for (var fsEntity in lister) {
       if (fsEntity is io.Link) {
         continue;
@@ -309,7 +310,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       var filePath = fsEntity.path.substring(repoPath.length);
 
       if (fsEntity is io.Directory) {
-        print('Directory');
+        debugPrint('Directory');
         _handleDirectoryEntity(filePath);
         continue;
       }
@@ -327,9 +328,8 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       }
       var file = fileR.getOrThrow();
 
-      var fileName = path.basename(filePath);
-      if (fileName.startsWith('.')) {
-        print('Ignore File');
+      if (_isIgnoreFileName(filePath)) {
+        debugPrint('Ignore File');
         _handleIgnoreOrInvalidFile(
           file,
           filePath,
@@ -340,7 +340,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
 
       var formatInfo = NoteFileFormatInfo(config);
       if (!formatInfo.isAllowedFileName(filePath)) {
-        print('Invalid File');
+        debugPrint('Invalid File');
         _handleIgnoreOrInvalidFile(
           file,
           filePath,
@@ -369,6 +369,9 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
 
     return Result(null);
   }
+
+  bool _isIgnoreFileName(String filePath) =>
+      path.basename(filePath).startsWith('.');
 
   void _handleUnOpenedFile(File file, String filePath) {
     var fileToBeProcessed = UnopenedFile(
@@ -416,7 +419,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       assert(ent is File);
 
       if (ent is Note) {
-        print('Note changes');
+        debugPrint('Note changes');
         assert(ent.oid.isNotEmpty);
         _files[i] = ent;
         _entityMap[ent.filePath] = ent;
@@ -432,7 +435,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       var ent = origEntityMap[folderPath];
       assert(ent is NotesFolderFS);
       if (ent is NotesFolderFS) {
-        print('NotesFolderFS');
+        debugPrint('NotesFolderFS');
         _folders[i] = ent;
         _entityMap[ent.folderPath] = ent;
       }
@@ -447,7 +450,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       assert(e is NotesFolder || e is File);
 
       if (e is File) {
-        print('File');
+        debugPrint('File');
         assert(e is! Note);
       } else {
         _addFolderListeners(e);
@@ -464,9 +467,9 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       assert(e is NotesFolder || e is File);
 
       if (e is File) {
-        print('File');
+        debugPrint('File');
         if (e is Note) {
-          print('Note');
+          debugPrint('Note');
           notifyNoteRemoved(-1, e, noteRemovedListeners);
         }
       } else {
@@ -690,29 +693,29 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     return _fetchTags(this, inlineTagsView, ISet());
   }
 
-  Future<List<Note>> matchNotes(NoteMatcherAsync pred) async {
+  Future<List<Note>> matchNotes(NoteMatcherAsync predicate) async {
     var matchedNotes = <Note>[];
-    await _matchNotes(matchedNotes, pred);
+    await _matchNotes(matchedNotes, predicate);
     return matchedNotes;
   }
 
   Future<void> _matchNotes(
     List<Note> matchedNotes,
-    NoteMatcherAsync pred,
+    NoteMatcherAsync predicate,
   ) async {
     for (var file in _files) {
       if (file is! Note) {
         continue;
       }
       var note = file;
-      var matches = await pred(note);
+      var matches = await predicate(note);
       if (matches) {
         matchedNotes.add(note);
       }
     }
 
     for (var folder in _folders) {
-      var _ = await folder._matchNotes(matchedNotes, pred);
+      var _ = await folder._matchNotes(matchedNotes, predicate);
     }
   }
 
