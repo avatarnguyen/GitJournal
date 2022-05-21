@@ -307,16 +307,9 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       if (fsEntity is io.Directory) {
         var subFolder = NotesFolderFS(this, filePath, _config);
         if (subFolder.name.startsWith('.')) {
-          // Log.v("Ignoring Folder", props: {
-          //   "path": filePath,
-          //   "reason": "Hidden folder",
-          // });
           continue;
         }
-        // Log.v("Found Folder", props: {"path": filePath});
-
-        newFolders.add(subFolder);
-        newEntityMap[filePath] = subFolder;
+        _addNewFolderAndEntity(newFolders, subFolder, newEntityMap, filePath);
         continue;
       }
 
@@ -435,6 +428,15 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     }
 
     return Result(null);
+  }
+
+  void _addNewFolderAndEntity(
+      List<NotesFolderFS> newFolders,
+      NotesFolderFS subFolder,
+      Map<String, dynamic> newEntityMap,
+      String filePath) {
+    newFolders.add(subFolder);
+    newEntityMap[filePath] = subFolder;
   }
 
   String _getIgnoredPath() => path.join(fullFolderPath, ".gitignore");
