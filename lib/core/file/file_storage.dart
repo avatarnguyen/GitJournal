@@ -6,18 +6,17 @@
 
 import 'dart:isolate';
 
-import 'package:flutter/foundation.dart';
-
 import 'package:dart_git/blob_ctime_builder.dart';
 import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/exceptions.dart';
 import 'package:dart_git/file_mtime_builder.dart';
-import 'package:path/path.dart' as p;
-import 'package:tuple/tuple.dart';
-import 'package:universal_io/io.dart' as io;
-
+import 'package:flutter/foundation.dart';
+import 'package:gitjournal/core/file/load_file_usecase.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/logger/logger.dart';
+import 'package:path/path.dart' as p;
+import 'package:tuple/tuple.dart';
+
 import 'file.dart';
 
 class FileStorage with ChangeNotifier {
@@ -41,51 +40,21 @@ class FileStorage with ChangeNotifier {
   }
 
   Future<Result<File>> load(String filePath) async {
-    assert(!filePath.startsWith(p.separator));
-    var fullFilePath = p.join(repoPath, filePath);
-
-    assert(fileMTimeBuilder.map.isNotEmpty, "Trying to load $filePath");
-    assert(blobCTimeBuilder.map.isNotEmpty, "Trying to load $filePath");
-
-    var ioFile = io.File(fullFilePath);
-    var stat = ioFile.statSync();
-    if (stat.type == io.FileSystemEntityType.notFound) {
-      var ex = Exception("File note found - $fullFilePath");
-      return Result.fail(ex);
+    try {
+      final resultFile = _loadFile(filePath);
+      return Result(resultFile);
+    } on Exception catch (error) {
+      return Result.fail(error);
     }
+  }
 
-    if (stat.type != io.FileSystemEntityType.file) {
-      // FIXME: Better error!
-      var ex = Exception('File is not file. Is ${stat.type}');
-      return Result.fail(ex);
-    }
-
-    var mTimeInfo = fileMTimeBuilder.info(filePath);
-    if (mTimeInfo == null) {
-      Log.e("Failed to build path: $filePath");
-      var ex = FileStorageCacheIncomplete(filePath);
-      return Result.fail(ex);
-    }
-
-    var oid = mTimeInfo.hash;
-    var modified = mTimeInfo.dt;
-
-    assert(oid.isNotEmpty);
-
-    var created = blobCTimeBuilder.cTime(oid);
-    if (created == null) {
-      var ex = Exception('when can this happen?');
-      return Result.fail(ex);
-    }
-
-    return Result(File(
-      oid: oid,
+  File _loadFile(String filePath) {
+    return LoadFileUseCase.loadFile(
+      blobCTimeBuilder,
+      fileMTimeBuilder,
       filePath: filePath,
       repoPath: repoPath,
-      fileLastModified: stat.modified,
-      created: created,
-      modified: modified,
-    ));
+    );
   }
 
   Future<void> fill() async {
