@@ -268,7 +268,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
   }
 
   Future<Result<void>> loadRecursively() async {
-    var r = await load();
+    var r = await loadFilesAndFolders();
     if (r.isFailure) return r;
 
     await loadNotes();
@@ -283,13 +283,14 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     return Result(null);
   }
 
-  Future<Result<void>> load() => _lock.synchronized(_load);
+  Future<Result<void>> loadFilesAndFolders() => _lock.synchronized(_load);
 
   var newEntityMap = <String, dynamic>{};
   var newFiles = <File>[];
   var newFolders = <NotesFolderFS>[];
 
   Future<Result<void>> _load() async {
+    // reset
     newEntityMap = {};
     newFiles = [];
     newFolders = [];
@@ -299,9 +300,8 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       return Result(null);
     }
 
-    final dir = io.Directory(fullFolderPath);
-    var lister = dir.list(followLinks: false);
-    await for (var fsEntity in lister) {
+    Stream<io.FileSystemEntity> fileEntities = _getElementInDir();
+    await for (var fsEntity in fileEntities) {
       if (fsEntity is io.Link) {
         continue;
       }
@@ -310,7 +310,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       var filePath = fsEntity.path.substring(repoPath.length);
 
       if (fsEntity is io.Directory) {
-        debugPrint('Directory');
+        debugPrint('Directory: $fsEntity');
         _handleDirectoryEntity(filePath);
         continue;
       }
@@ -370,10 +370,17 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
     return Result(null);
   }
 
+  Stream<io.FileSystemEntity> _getElementInDir() {
+    final dir = io.Directory(fullFolderPath);
+    var lister = dir.list(followLinks: false);
+    return lister;
+  }
+
   bool _isIgnoreFileName(String filePath) =>
       path.basename(filePath).startsWith('.');
 
   void _handleUnOpenedFile(File file, String filePath) {
+    debugPrint('UnopenedFile : $filePath $file');
     var fileToBeProcessed = UnopenedFile(
       file: file,
       parent: this,
@@ -450,7 +457,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       assert(e is NotesFolder || e is File);
 
       if (e is File) {
-        debugPrint('File');
+        debugPrint('Add File: $e');
         assert(e is! Note);
       } else {
         _addFolderListeners(e);
@@ -467,7 +474,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       assert(e is NotesFolder || e is File);
 
       if (e is File) {
-        debugPrint('File');
+        debugPrint('Remove File: $e');
         if (e is Note) {
           debugPrint('Note');
           notifyNoteRemoved(-1, e, noteRemovedListeners);
@@ -564,7 +571,13 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       throw Exception("Cannot rename root directory");
     }
 
-    var oldPath = folderPath;
+    String oldPath = _renameDirectory(newName);
+
+    notifyThisFolderRenamed(this, oldPath, thisFolderRenamedListeners);
+  }
+
+  String _renameDirectory(String newName) {
+    final oldPath = folderPath;
     var dir = io.Directory(fullFolderPath);
     _folderPath = path.join(dirname(oldPath), newName);
     assert(!_folderPath.endsWith(path.separator));
@@ -573,8 +586,7 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
       throw Exception("Directory already exists");
     }
     var _ = dir.renameSync(fullFolderPath);
-
-    notifyThisFolderRenamed(this, oldPath, thisFolderRenamedListeners);
+    return oldPath;
   }
 
   void updateNote(Note note) {
