@@ -6,25 +6,17 @@
 
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-
 import 'package:collection/collection.dart';
 import 'package:dart_git/config.dart';
 import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/exceptions.dart';
 import 'package:dart_git/plumbing/git_hash.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:git_bindings/git_bindings.dart';
-import 'package:path/path.dart' as p;
-import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:synchronized/synchronized.dart';
-import 'package:time/time.dart';
-import 'package:universal_io/io.dart' as io;
-import 'package:universal_io/io.dart' show Platform;
-
 import 'package:gitjournal/analytics/analytics.dart';
 import 'package:gitjournal/core/commit_message_builder.dart';
+import 'package:gitjournal/core/file/file_exceptions.dart';
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/core/file/file_storage_cache.dart';
 import 'package:gitjournal/core/folder/notes_folder_config.dart';
@@ -41,6 +33,13 @@ import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/settings_migrations.dart';
 import 'package:gitjournal/settings/storage_config.dart';
 import 'package:gitjournal/sync_attempt.dart';
+import 'package:path/path.dart' as p;
+import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:synchronized/synchronized.dart';
+import 'package:time/time.dart';
+import 'package:universal_io/io.dart' show Platform;
+import 'package:universal_io/io.dart' as io;
 
 class GitJournalRepo with ChangeNotifier {
   final RepositoryManager repoManager;

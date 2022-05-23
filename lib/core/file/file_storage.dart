@@ -11,7 +11,7 @@ import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/file_mtime_builder.dart';
 import 'package:flutter/foundation.dart';
 import 'package:gitjournal/core/file/load_file_usecase.dart';
-import 'package:path/path.dart' as p;
+import 'package:path/path.dart' as path;
 
 import 'file.dart';
 
@@ -31,8 +31,9 @@ class FileStorage with ChangeNotifier {
     required this.blobCTimeBuilder,
     required this.fileMTimeBuilder,
   }) {
-    this.repoPath =
-        repoPath.endsWith(p.separator) ? repoPath : repoPath + p.separator;
+    this.repoPath = repoPath.endsWith(path.separator)
+        ? repoPath
+        : repoPath + path.separator;
   }
 
   Future<Result<File>> load(String filePath) async {
@@ -54,6 +55,19 @@ class FileStorage with ChangeNotifier {
   }
 
   Future<void> fill() async {
+    FillFileStorageOutput? resp = await fillFileStorageIsolate();
+
+    // FIXME: Handle this case of having an error!
+    assert(resp != null);
+    if (resp == null) return;
+
+    blobCTimeBuilder.update(resp.item1);
+    fileMTimeBuilder.update(resp.item2);
+    head = resp.item3;
+    notifyListeners();
+  }
+
+  Future<FillFileStorageOutput?> fillFileStorageIsolate() async {
     var rp = ReceivePort();
     var _ = rp.listen((d) {
       if (d is DateTime) {
@@ -72,20 +86,12 @@ class FileStorage with ChangeNotifier {
       ),
     );
     rp.close();
-
-    // FIXME: Handle this case of having an error!
-    assert(resp != null);
-    if (resp == null) return;
-
-    blobCTimeBuilder.update(resp.item1);
-    fileMTimeBuilder.update(resp.item2);
-    head = resp.item3;
-    notifyListeners();
+    return resp;
   }
 
   @visibleForTesting
   static Future<FileStorage> fake(String rootFolder) async {
-    assert(rootFolder.startsWith(p.separator));
+    assert(rootFolder.startsWith(path.separator));
 
     GitRepository.init(rootFolder).throwOnError();
 
@@ -102,9 +108,9 @@ class FileStorage with ChangeNotifier {
     }
     // assert(!headHashR.isFailure, "Failed to get head hash");
 
-    var repoPath = rootFolder.endsWith(p.separator)
+    var repoPath = rootFolder.endsWith(path.separator)
         ? rootFolder
-        : rootFolder + p.separator;
+        : rootFolder + path.separator;
 
     return FileStorage(
       repoPath: repoPath,
@@ -118,9 +124,4 @@ class FileStorage with ChangeNotifier {
     await fill();
     return Result(null);
   }
-}
-
-class FileStorageCacheIncomplete implements Exception {
-  final String path;
-  FileStorageCacheIncomplete(this.path);
 }

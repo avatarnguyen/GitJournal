@@ -4,7 +4,7 @@ import 'package:dart_git/blob_ctime_builder.dart';
 import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/exceptions.dart';
 import 'package:dart_git/file_mtime_builder.dart';
-import 'package:gitjournal/core/file/file_storage.dart';
+import 'package:gitjournal/core/file/file_exceptions.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:path/path.dart' as path;
@@ -96,7 +96,10 @@ class LoadFileUseCase {
         // notifyListeners();
         // FIXME: Send a signal saying its done
         return FillFileStorageOutput(
-            blobCTimeBuilder, fileMTimeBuilder, GitHash.zero());
+          blobCTimeBuilder,
+          fileMTimeBuilder,
+          GitHash.zero(),
+        );
       }
       Log.e("Failed to fetch HEAD", result: headR);
       return null;

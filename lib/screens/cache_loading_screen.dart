@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import 'package:flutter/material.dart';
-
 import 'package:easy_localization/easy_localization.dart';
-import 'package:provider/provider.dart';
-
+import 'package:flutter/material.dart';
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
+import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/repository.dart';
+import 'package:provider/provider.dart';
 
 class CacheLoadingScreen extends StatelessWidget {
   const CacheLoadingScreen({Key? key}) : super(key: key);
@@ -46,6 +45,7 @@ class _CacheLoadingScreenState extends State<_CacheLoadingScreen> {
   }
 
   void _rebuild() {
+    Log.e('--------- rebuild loading screen -------------');
     setState(() {});
   }
 
