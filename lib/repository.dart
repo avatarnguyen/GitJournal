@@ -606,32 +606,54 @@ class GitJournalRepo with ChangeNotifier {
     assert(note.oid.isEmpty);
     logEvent(Event.NoteAdded);
 
-    note = note.updateModified();
-
-    var r = await NoteStorage.save(note);
-    if (r.isFailure) {
-      Log.e("Note saving failed", ex: r.error, stacktrace: r.stackTrace);
-      return fail(r);
+    final _noteAddedResult = await _addNoteToStorage(note);
+    if (_noteAddedResult.isFailure) {
+      return _noteAddedResult;
     }
-    note = r.getOrThrow();
 
-    note.parent.add(note);
-
-    await _gitOpLock.synchronized(() async {
-      Log.d("Got addNote lock");
-
-      var result = await _gitRepo.addNote(note);
-      if (result.isFailure) {
-        Log.e("addNote", result: result);
-        return;
-      }
-
+    final isNoteAdded = await _addNoteToGitRepo(note);
+    if (isNoteAdded) {
       numChanges += 1;
       notifyListeners();
-    });
+    }
 
     unawaited(_syncNotes());
     return Result(note);
+  }
+
+  Future<Result<Note>> _addNoteToStorage(Note note) async {
+    note = note.updateModified();
+
+    final _storageResult = await NoteStorage.save(note);
+    if (_storageResult.isFailure) {
+      Log.e(
+        "Note saving failed",
+        ex: _storageResult.error,
+        stacktrace: _storageResult.stackTrace,
+      );
+      return fail(_storageResult);
+    }
+    note = _storageResult.getOrThrow();
+    note.parent.add(note);
+    return Result(note);
+  }
+
+  Future<bool> _addNoteToGitRepo(Note note) async {
+    try {
+      return await _gitOpLock.synchronized(() async {
+        Log.d("Got addNote lock");
+
+        var result = await _gitRepo.addNote(note);
+        if (result.isFailure) {
+          Log.e("addNote", result: result);
+          return false;
+        }
+        return true;
+      });
+    } on Exception catch (e) {
+      Log.e('$e');
+      return false;
+    }
   }
 
   void removeNote(Note note) => removeNotes([note]);
