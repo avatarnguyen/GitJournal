@@ -23,7 +23,6 @@ import 'package:gitjournal/core/folder/notes_folder_config.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/core/note.dart';
-import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/core/notes_cache.dart';
 import 'package:gitjournal/domain/note_usecases.dart';
 import 'package:gitjournal/error_reporting.dart';
@@ -680,32 +679,13 @@ class GitJournalRepo with ChangeNotifier {
     assert(oldNote.filePath == newNote.filePath);
     assert(oldNote.parent == newNote.parent);
 
-    newNote = newNote.updateModified();
-
-    var r = await NoteStorage.save(newNote);
-    if (r.isFailure) {
-      Log.e("Note saving failed", ex: r.error, stacktrace: r.stackTrace);
-      return fail(r);
-    }
-    newNote = r.getOrThrow();
-
-    newNote.parent.updateNote(newNote);
-
-    await _gitOpLock.synchronized(() async {
-      Log.d("Got updateNote lock");
-
-      var result = await _gitRepo.updateNote(newNote);
-      if (result.isFailure) {
-        Log.e("updateNote", result: result);
-        return;
-      }
-
+    final _noteAddedResult = await noteUsecases.updateNote(newNote);
+    if (_noteAddedResult.isSuccess) {
       numChanges += 1;
       notifyListeners();
-    });
-
-    unawaited(_syncNotes());
-    return Result(newNote);
+      unawaited(_syncNotes());
+    }
+    return _noteAddedResult;
   }
 
   Future<void> completeGitHostSetup(
