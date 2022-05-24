@@ -624,28 +624,22 @@ class GitJournalRepo with ChangeNotifier {
   Future<void> removeNotes(List<Note> notes) async {
     logEvent(Event.NoteDeleted);
 
-    await _gitOpLock.synchronized(() async {
-      Log.d("Got removeNote lock");
-
-      // FIXME: What if the Note hasn't yet been saved?
+    // FIXME: What if the Note hasn't yet been saved?
+    await noteUsecases.removeNotes(notes).then((value) {
+      // remove locally
       for (var note in notes) {
+        Log.i('removeNotes locally: $note');
         note.parent.remove(note);
       }
-      var result = await _gitRepo.removeNotes(notes);
-      if (result.isFailure) {
-        Log.e("removeNotes", result: result);
-        return;
-      }
-
       numChanges += 1;
       notifyListeners();
-
-      // FIXME: Is there a way of figuring this amount dynamically?
-      // The '4 seconds' is taken from snack_bar.dart -> _kSnackBarDisplayDuration
-      // We wait an aritfical amount of time, so that the user has a chance to undo
-      // their delete operation, and that commit is not synced with the server, till then.
-      var _ = await Future.delayed(4.seconds);
     });
+
+    // FIXME: Is there a way of figuring this amount dynamically?
+    // The '4 seconds' is taken from snack_bar.dart -> _kSnackBarDisplayDuration
+    // We wait an aritfical amount of time, so that the user has a chance to undo
+    // their delete operation, and that commit is not synced with the server, till then.
+    var _ = await Future.delayed(4.seconds);
 
     unawaited(_syncNotes());
   }

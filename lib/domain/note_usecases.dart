@@ -7,6 +7,8 @@ import 'package:synchronized/synchronized.dart';
 
 class StorageException implements Exception {}
 
+class ServerException implements Exception {}
+
 class NoteUsecases {
   final GitNoteRepository gitRepo;
 
@@ -105,7 +107,7 @@ class NoteUsecases {
   Future<bool> _updateGitNote(Note note) async {
     try {
       return await _gitOpLock.synchronized(() async {
-        Log.d("Got addNote lock");
+        Log.d("Got updateNote lock");
 
         var result = await gitRepo.updateNote(note);
         if (result.isFailure) {
@@ -117,6 +119,32 @@ class NoteUsecases {
     } on Exception catch (e) {
       Log.e('$e');
       throw StorageException();
+    }
+  }
+
+  //**************** Remove Note ****************
+
+  Future<void> removeNotes(List<Note> notes) async {
+    try {
+      await _removeGitNotes(notes);
+    } on ServerException catch (e) {
+      Log.e('Remove Note Method: $e');
+    }
+  }
+
+  Future<void> _removeGitNotes(List<Note> notes) async {
+    try {
+      return await _gitOpLock.synchronized(() async {
+        Log.d("Got removeNote lock");
+
+        var result = await gitRepo.removeNotes(notes);
+        if (result.isFailure) {
+          Log.e("remove Note failed", result: result);
+          throw ServerException();
+        }
+      });
+    } on Exception catch (e) {
+      throw ServerException();
     }
   }
 }
