@@ -604,7 +604,7 @@ class GitJournalRepo with ChangeNotifier {
 
   Future<Result<Note>> saveNoteToDisk(Note note) async {
     assert(note.oid.isEmpty);
-    return NoteStorage.save(note);
+    return await noteUsecases.saveNoteToStorage(note);
   }
 
   Future<Result<Note>> addNote(Note note) async {

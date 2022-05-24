@@ -31,7 +31,7 @@ class NoteUsecases {
   Future<Result<Note>> _addNoteToStorage(Note note) async {
     note = note.updateModified();
 
-    final _storageResult = await NoteStorage.save(note);
+    Result<Note> _storageResult = await saveNoteToStorage(note);
     if (_storageResult.isFailure) {
       Log.e(
         "Note saving failed",
@@ -43,6 +43,11 @@ class NoteUsecases {
     note = _storageResult.getOrThrow();
     note.parent.add(note);
     return Result(note);
+  }
+
+  Future<Result<Note>> saveNoteToStorage(Note note) async {
+    final _storageResult = await NoteStorage.save(note);
+    return _storageResult;
   }
 
   Future<bool> _addNoteToGitRepo(Note note) async {
