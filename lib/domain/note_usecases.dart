@@ -1,4 +1,5 @@
 import 'package:dart_git/utils/result.dart';
+import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
@@ -148,7 +149,7 @@ class NoteUsecases {
     }
   }
 
-//**************** Remove Note ****************
+//**************** Undo Remove Note ****************
 
   Future<void> undoRemoveNote(Note note) async {
     try {
@@ -172,6 +173,61 @@ class NoteUsecases {
         }
       });
     } on Exception catch (e) {
+      throw ServerException();
+    }
+  }
+
+//**************** Move Notes ****************
+
+  Future<Result<List<Note>>> moveNotes(
+    List<Note> notes,
+    NotesFolderFS destFolder,
+  ) async {
+    try {
+      final _notes = await _moveGitNotes(notes, destFolder);
+      return Result(_notes);
+    } on ServerException catch (error) {
+      return Result.fail(error);
+    }
+  }
+
+  Future<List<Note>> _moveGitNotes(
+    List<Note> notes,
+    NotesFolderFS destFolder,
+  ) async {
+    var newNotes = <Note>[];
+    try {
+      return await _gitOpLock.synchronized(() async {
+        Log.d("Got moveNotes lock");
+
+        var oldPaths = <String>[];
+        var newPaths = <String>[];
+
+        for (final note in notes) {
+          var moveNoteResult = NotesFolderFS.moveNote(note, destFolder);
+          // FIXME: We need to validate that this wont cause any problems!
+          //        Transaction needs to be reverted
+          if (moveNoteResult.isFailure) {
+            Log.e("moveNotes", result: moveNoteResult);
+            throw StorageException();
+          }
+          var newNote = moveNoteResult.getOrThrow();
+          oldPaths.add(note.filePath);
+          newPaths.add(newNote.filePath);
+
+          newNotes.add(newNote);
+        }
+
+        final result = await gitRepo.moveNotes(oldPaths, newPaths);
+        if (result.isFailure) {
+          Log.e("moveNotes", result: result);
+          throw ServerException();
+        }
+
+        return newNotes;
+      });
+    } on Exception catch (e) {
+      Log.e('$e');
       throw ServerException();
     }
   }

@@ -232,12 +232,12 @@ Future<void> main() async {
     expect(toNote.modified.isAfter(note.modified), true);
   });
 
-  group('Move', () {
+  group('Move - ', () {
     setUp(() async {
       await _setup();
     });
 
-    test('Move - Note from root to Folder', () async {
+    test('Note from root to Folder', () async {
       var note = repo.rootFolder.getNoteWithSpec('1.md')!;
       var folder = repo.rootFolder.getFolderWithSpec('f1')!;
 
@@ -257,7 +257,7 @@ Future<void> main() async {
       expect(root.getNoteWithSpec('f1/1.md'), isNotNull);
     });
 
-    test('Move - Note from Folder to Root', () async {
+    test('Note from Folder to Root', () async {
       var note = repo.rootFolder.getNoteWithSpec('f1/3.md')!;
       var folder = repo.rootFolder;
 
@@ -277,7 +277,7 @@ Future<void> main() async {
       expect(root.getNoteWithSpec('3.md'), isNotNull);
     });
 
-    test('Move - To New Folder', () async {
+    test('To New Folder', () async {
       var note = repo.rootFolder.getNoteWithSpec('1.md')!;
       var folder = repo.rootFolder.getOrBuildFolderWithSpec('f2');
       folder.create();
@@ -298,7 +298,7 @@ Future<void> main() async {
       expect(root.getNoteWithSpec('f2/1.md'), isNotNull);
     });
 
-    test('Move - To New Folder Failure', () async {
+    test('To New Folder Failure', () async {
       var note = repo.rootFolder.getNoteWithSpec('1.md')!;
       var folder = repo.rootFolder.getOrBuildFolderWithSpec('f2');
 
