@@ -25,6 +25,7 @@ import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/core/notes_cache.dart';
+import 'package:gitjournal/domain/note_usecases.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/repository_manager.dart';
@@ -66,6 +67,8 @@ class GitJournalRepo with ChangeNotifier {
   late final GitNoteRepository _gitRepo;
   late final NotesCache _notesCache;
   late final NotesFolderFS rootFolder;
+
+  late final NoteUsecases noteUsecases;
 
   //
   // Mutable stuff
@@ -233,6 +236,8 @@ class GitJournalRepo with ChangeNotifier {
     _gitRepo = GitNoteRepository(gitRepoPath: repoPath, config: gitConfig);
     rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
     _currentBranch = currentBranch;
+
+    noteUsecases = NoteUsecases(_gitRepo);
 
     Log.i("Branch $_currentBranch");
 
@@ -606,54 +611,13 @@ class GitJournalRepo with ChangeNotifier {
     assert(note.oid.isEmpty);
     logEvent(Event.NoteAdded);
 
-    final _noteAddedResult = await _addNoteToStorage(note);
-    if (_noteAddedResult.isFailure) {
-      return _noteAddedResult;
-    }
-
-    final isNoteAdded = await _addNoteToGitRepo(note);
-    if (isNoteAdded) {
+    final _noteAddedResult = await noteUsecases.addNote(note);
+    if (_noteAddedResult.isSuccess) {
       numChanges += 1;
       notifyListeners();
+      unawaited(_syncNotes());
     }
-
-    unawaited(_syncNotes());
-    return Result(note);
-  }
-
-  Future<Result<Note>> _addNoteToStorage(Note note) async {
-    note = note.updateModified();
-
-    final _storageResult = await NoteStorage.save(note);
-    if (_storageResult.isFailure) {
-      Log.e(
-        "Note saving failed",
-        ex: _storageResult.error,
-        stacktrace: _storageResult.stackTrace,
-      );
-      return fail(_storageResult);
-    }
-    note = _storageResult.getOrThrow();
-    note.parent.add(note);
-    return Result(note);
-  }
-
-  Future<bool> _addNoteToGitRepo(Note note) async {
-    try {
-      return await _gitOpLock.synchronized(() async {
-        Log.d("Got addNote lock");
-
-        var result = await _gitRepo.addNote(note);
-        if (result.isFailure) {
-          Log.e("addNote", result: result);
-          return false;
-        }
-        return true;
-      });
-    } on Exception catch (e) {
-      Log.e('$e');
-      return false;
-    }
+    return _noteAddedResult;
   }
 
   void removeNote(Note note) => removeNotes([note]);
