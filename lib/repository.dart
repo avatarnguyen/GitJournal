@@ -647,16 +647,7 @@ class GitJournalRepo with ChangeNotifier {
   Future<void> undoRemoveNote(Note note) async {
     logEvent(Event.NoteUndoDeleted);
 
-    await _gitOpLock.synchronized(() async {
-      Log.d("Got undoRemoveNote lock");
-
-      note.parent.add(note);
-      var result = await _gitRepo.resetLastCommit();
-      if (result.isFailure) {
-        Log.e("undoRemoveNote", result: result);
-        return;
-      }
-
+    await noteUsecases.undoRemoveNote(note).then((_) {
       numChanges -= 1;
       notifyListeners();
     });

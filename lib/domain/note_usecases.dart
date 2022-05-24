@@ -147,4 +147,32 @@ class NoteUsecases {
       throw ServerException();
     }
   }
+
+//**************** Remove Note ****************
+
+  Future<void> undoRemoveNote(Note note) async {
+    try {
+      await resetLastCommit().then((_) {
+        note.parent.add(note);
+      });
+    } on ServerException catch (e) {
+      Log.e('Remove Note Method: $e');
+    }
+  }
+
+  Future<void> resetLastCommit() async {
+    try {
+      return await _gitOpLock.synchronized(() async {
+        Log.d("Got undo remove note lock");
+
+        var result = await gitRepo.resetLastCommit();
+        if (result.isFailure) {
+          Log.e("undoRemoveNote", result: result);
+          throw ServerException();
+        }
+      });
+    } on Exception catch (e) {
+      throw ServerException();
+    }
+  }
 }
