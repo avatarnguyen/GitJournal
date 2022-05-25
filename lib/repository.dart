@@ -233,6 +233,7 @@ class GitJournalRepo with ChangeNotifier {
     rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
     _currentBranch = currentBranch;
 
+    // Init NoteUsecases instance
     noteUsecases = NoteUsecases(_gitRepo);
 
     Log.i("Branch $_currentBranch");
@@ -334,13 +335,8 @@ class GitJournalRepo with ChangeNotifier {
   Future<void> syncNotes({bool doNotThrow = false}) async {
     // This is extremely slow with dart-git, can take over a second!
     if (_shouldCheckForChanges()) {
-      var repoR = await GitAsyncRepository.load(repoPath);
-      if (repoR.isFailure) {
-        Log.e("SyncNotes Failed to Load Repo", result: repoR);
-        return;
-      }
-      var repo = repoR.getOrThrow();
-      await NoteUsecases.commitUnTrackedChanges(repo, gitConfig).throwOnError();
+      final result = await _gitLoadAsync();
+      if (result.isFailure) return;
     }
 
     if (!remoteGitRepoConfigured) {
@@ -357,32 +353,18 @@ class GitJournalRepo with ChangeNotifier {
 
     Future<void>? noteLoadingFuture;
     try {
-      await _networkLock.synchronized(() async {
-        await _gitRepo.fetch().throwOnError();
-      });
+      await _gitFetch();
 
       attempt.add(SyncStatus.Merging);
 
-      await _gitOpLock.synchronized(() async {
-        var r = await _gitRepo.merge();
-        if (r.isFailure) {
-          var ex = r.error!;
-          // When there is nothing to merge into
-          if (ex is! GitRefNotFound) {
-            throw ex;
-            // FIXME: Do not throw this exception, try to solve it somehow!!
-          }
-        }
-      });
+      await _gitMerge();
 
       attempt.add(SyncStatus.Pushing);
       notifyListeners();
 
       noteLoadingFuture = _loadNotes();
 
-      await _networkLock.synchronized(() async {
-        await _gitRepo.push().throwOnError();
-      });
+      await _gitPush();
 
       Log.d("Synced!");
       attempt.add(SyncStatus.Done);
@@ -405,6 +387,43 @@ class GitJournalRepo with ChangeNotifier {
     }
 
     await noteLoadingFuture;
+  }
+
+  Future<void> _gitPush() async {
+    await _networkLock.synchronized(() async {
+      await _gitRepo.push().throwOnError();
+    });
+  }
+
+  Future<void> _gitMerge() async {
+    await _gitOpLock.synchronized(() async {
+      var r = await _gitRepo.merge();
+      if (r.isFailure) {
+        var ex = r.error!;
+        // When there is nothing to merge into
+        if (ex is! GitRefNotFound) {
+          throw ex;
+          // FIXME: Do not throw this exception, try to solve it somehow!!
+        }
+      }
+    });
+  }
+
+  Future<void> _gitFetch() async {
+    await _networkLock.synchronized(() async {
+      await _gitRepo.fetch().throwOnError();
+    });
+  }
+
+  Future<Result> _gitLoadAsync() async {
+    final repoR = await GitAsyncRepository.load(repoPath);
+    if (repoR.isFailure) {
+      Log.e("SyncNotes Failed to Load Repo", result: repoR);
+      return repoR;
+    }
+    final repo = repoR.getOrThrow();
+    await NoteUsecases.commitUnTrackedChanges(repo, gitConfig).throwOnError();
+    return Result(repo);
   }
 
   Future<void> _syncNotes() async {
