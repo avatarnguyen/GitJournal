@@ -13,9 +13,7 @@ import 'package:dart_git/exceptions.dart';
 import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:git_bindings/git_bindings.dart';
 import 'package:gitjournal/analytics/analytics.dart';
-import 'package:gitjournal/core/commit_message_builder.dart';
 import 'package:gitjournal/core/file/file_exceptions.dart';
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/core/file/file_storage_cache.dart';
@@ -178,9 +176,9 @@ class GitJournalRepo with ChangeNotifier {
     var remoteConfigured = repo.config.remotes.isNotEmpty;
 
     if (!storageConfig.storeInternally) {
-      var r = await _commitUnTrackedChanges(repo, gitConfig);
-      if (r.isFailure) {
-        return fail(r);
+      final result = await NoteUsecases.commitUnTrackedChanges(repo, gitConfig);
+      if (result.isFailure) {
+        return fail(result);
       }
     }
 
@@ -294,7 +292,8 @@ class GitJournalRepo with ChangeNotifier {
           var ex = r.error as FileStorageCacheIncomplete;
           Log.i("FileStorageCacheIncomplete ${ex.path}");
           var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
-          await _commitUnTrackedChanges(repo, gitConfig).throwOnError();
+          await NoteUsecases.commitUnTrackedChanges(repo, gitConfig)
+              .throwOnError();
           await _resetFileStorage();
           return;
         }
@@ -350,7 +349,7 @@ class GitJournalRepo with ChangeNotifier {
         return;
       }
       var repo = repoR.getOrThrow();
-      await _commitUnTrackedChanges(repo, gitConfig).throwOnError();
+      await NoteUsecases.commitUnTrackedChanges(repo, gitConfig).throwOnError();
     }
 
     if (!remoteGitRepoConfigured) {
@@ -637,7 +636,10 @@ class GitJournalRepo with ChangeNotifier {
     await _persistConfig();
 
     var newRepoPath = p.join(gitBaseDirectory, repoFolderName);
-    await _ensureOneCommitInRepo(repoPath: newRepoPath, config: gitConfig);
+    await noteUsecases.ensureOneCommitInRepo(
+      repoPath: newRepoPath,
+      config: gitConfig,
+    );
 
     if (newRepoPath != repoPath) {
       Log.i("Old Path: $repoPath");
@@ -873,63 +875,4 @@ Future<void> _copyDirectory(String source, String destination) async {
       _ = await entity.copy(p.join(destination, p.basename(entity.path)));
     }
   }
-}
-
-/// Add a GitIgnore file if no file is present. This way we always at least have
-/// one commit. It makes doing a git pull and push easier
-Future<void> _ensureOneCommitInRepo({
-  required String repoPath,
-  required GitConfig config,
-}) async {
-  try {
-    var dirList = await io.Directory(repoPath).list().toList();
-    var anyFileInRepo = dirList.firstWhereOrNull(
-      (fs) => fs.statSync().type == io.FileSystemEntityType.file,
-    );
-    if (anyFileInRepo == null) {
-      Log.i("Adding .ignore file");
-      var ignoreFile = io.File(p.join(repoPath, ".gitignore"));
-      ignoreFile.createSync();
-
-      var repo = GitRepo(folderPath: repoPath);
-      await repo.add('.gitignore');
-
-      await repo.commit(
-        message: "Add gitignore file",
-        authorEmail: config.gitAuthorEmail,
-        authorName: config.gitAuthor,
-      );
-    }
-  } catch (ex, st) {
-    Log.e("_ensureOneCommitInRepo", ex: ex, stacktrace: st);
-  }
-}
-
-Future<Result<void>> _commitUnTrackedChanges(
-    GitAsyncRepository repo, GitConfig gitConfig) async {
-  var timer = Stopwatch()..start();
-  //
-  // Check for un-committed files and save them
-  //
-  var addR = await repo.add('.');
-  if (addR.isFailure) {
-    return fail(addR);
-  }
-
-  var commitR = await repo.commit(
-    message: CommitMessageBuilder().autoCommit(),
-    author: GitAuthor(
-      name: gitConfig.gitAuthor,
-      email: gitConfig.gitAuthorEmail,
-    ),
-  );
-  if (commitR.isFailure) {
-    if (commitR.error is! GitEmptyCommit) {
-      Log.i('_commitUntracked NoCommit: ${timer.elapsed}');
-      return fail(commitR);
-    }
-  }
-
-  Log.i('_commitUntracked: ${timer.elapsed}');
-  return Result(null);
 }

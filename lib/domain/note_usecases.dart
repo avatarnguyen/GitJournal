@@ -1,9 +1,17 @@
+import 'package:collection/collection.dart';
+import 'package:dart_git/dart_git.dart';
+import 'package:dart_git/exceptions.dart';
+import 'package:dart_git/git_async.dart';
 import 'package:dart_git/utils/result.dart';
+import 'package:git_bindings/git_bindings.dart';
+import 'package:gitjournal/core/commit_message_builder.dart';
+import 'package:gitjournal/core/file/file_exceptions.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/logger/logger.dart';
+import 'package:gitjournal/settings/git_config.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:universal_io/io.dart' as io;
 
@@ -17,6 +25,7 @@ class NoteUsecases {
   NoteUsecases(this.gitRepo);
 
   final _gitOpLock = Lock();
+  final _loadLock = Lock();
 
   //**************** Add Note ****************
   Future<Result<Note>> addNote(Note note) async {
@@ -282,6 +291,92 @@ class NoteUsecases {
     } on Exception catch (e) {
       Log.e('$e');
       throw ServerException();
+    }
+  }
+
+//**************** Load Notes ****************
+  Future<void> loadGitNotes(NotesFolderFS rootFolder) async {
+    try {
+      return _loadLock.synchronized(() async {
+        var r = await rootFolder.loadRecursively();
+        if (r.isFailure) {
+          if (r.error is FileStorageCacheIncomplete) {
+            var ex = r.error as FileStorageCacheIncomplete;
+            Log.i("FileStorageCacheIncomplete ${ex.path}");
+            var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
+            await _commitUnTrackedChanges(repo, gitConfig).throwOnError();
+            await _resetFileStorage();
+            return;
+          }
+        }
+        await _notesCache.buildCache(rootFolder);
+
+        var changes = await gitRepo.numChanges();
+      });
+    } on Exception catch (e) {
+      Log.e('$e');
+      throw ServerException();
+    }
+  }
+
+  static Future<Result<void>> commitUnTrackedChanges(
+    GitAsyncRepository repo,
+    GitConfig gitConfig,
+  ) async {
+    var timer = Stopwatch()..start();
+    //
+    // Check for un-committed files and save them
+    //
+    var addR = await repo.add('.');
+    if (addR.isFailure) {
+      return fail(addR);
+    }
+
+    var commitR = await repo.commit(
+      message: CommitMessageBuilder().autoCommit(),
+      author: GitAuthor(
+        name: gitConfig.gitAuthor,
+        email: gitConfig.gitAuthorEmail,
+      ),
+    );
+    if (commitR.isFailure) {
+      if (commitR.error is! GitEmptyCommit) {
+        Log.i('_commitUntracked NoCommit: ${timer.elapsed}');
+        return fail(commitR);
+      }
+    }
+
+    Log.i('_commitUntracked: ${timer.elapsed}');
+    return Result(null);
+  }
+
+  /// Add a GitIgnore file if no file is present. This way we always at least have
+  /// one commit. It makes doing a git pull and push easier
+  Future<void> ensureOneCommitInRepo({
+    required String repoPath,
+    required GitConfig config,
+  }) async {
+    try {
+      var dirList = await io.Directory(repoPath).list().toList();
+      var anyFileInRepo = dirList.firstWhereOrNull(
+        (fs) => fs.statSync().type == io.FileSystemEntityType.file,
+      );
+      if (anyFileInRepo == null) {
+        Log.i("Adding .ignore file");
+        var ignoreFile = io.File(p.join(repoPath, ".gitignore"));
+        ignoreFile.createSync();
+
+        var repo = GitRepo(folderPath: repoPath);
+        await repo.add('.gitignore');
+
+        await repo.commit(
+          message: "Add gitignore file",
+          authorEmail: config.gitAuthorEmail,
+          authorName: config.gitAuthor,
+        );
+      }
+    } catch (ex, st) {
+      Log.e("_ensureOneCommitInRepo", ex: ex, stacktrace: st);
     }
   }
 }
