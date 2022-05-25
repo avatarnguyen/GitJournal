@@ -511,40 +511,23 @@ class GitJournalRepo with ChangeNotifier {
 
     logEvent(Event.NoteRenamed);
 
-    var toNote = fromNote.copyWithFileName(newFileName);
-    if (io.File(toNote.fullFilePath).existsSync()) {
-      var ex = Exception('Destination Note exists');
-      return Result.fail(ex);
-    }
-
-    var renameR = fromNote.parent.renameNote(fromNote, toNote);
-    if (renameR.isFailure) {
-      return fail(renameR);
-    }
-
-    var _ = await _gitOpLock.synchronized(() async {
-      var result = await _gitRepo.renameNote(
-        fromNote.filePath,
-        toNote.filePath,
-      );
-      if (result.isFailure) {
-        Log.e("renameNote", result: result);
-        return fail(result);
-      }
-
-      numChanges += 1;
-      notifyListeners();
-    });
-
-    unawaited(_syncNotes());
-    return Result(toNote);
+    return await noteUsecases.renameNote(fromNote, newFileName).then(
+      (result) {
+        if (result.isSuccess) {
+          numChanges += 1;
+          notifyListeners();
+          unawaited(_syncNotes());
+        }
+        return result;
+      },
+    );
   }
 
   Future<Result<Note>> moveNote(Note note, NotesFolderFS destFolder) async {
-    var r = await moveNotes([note], destFolder);
-    if (r.isFailure) return fail(r);
+    final result = await moveNotes([note], destFolder);
+    if (result.isFailure) return fail(result);
 
-    var newNotes = r.getOrThrow();
+    var newNotes = result.getOrThrow();
     assert(newNotes.length == 1);
     return Result(newNotes.first);
   }

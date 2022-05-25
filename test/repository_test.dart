@@ -232,6 +232,27 @@ Future<void> main() async {
     expect(toNote.modified.isAfter(note.modified), true);
   });
 
+  test('rename Note - ', () async {
+    var headHash = GitHash('38e8c9150c0c004c9f72221ac7c19cf770575545');
+    await _setup(head: headHash);
+
+    var note = repo.rootFolder.getNoteWithSpec('doc.md')!;
+
+    const testName = 'test_name.md';
+    final toNote = await repo.renameNote(note, testName).getOrThrow();
+
+    var gitRepo = GitRepository.load(repoPath).getOrThrow();
+    expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+
+    var headCommit = gitRepo.headCommit().getOrThrow();
+    expect(headCommit.parents.length, 1);
+    expect(headCommit.parents[0], headHash);
+
+    expect(toNote.created, note.created);
+    expect(toNote.modified.isAfter(note.modified), true);
+    expect(toNote.fileName, testName);
+  });
+
   group('Move - ', () {
     setUp(() async {
       await _setup();

@@ -5,6 +5,7 @@ import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:synchronized/synchronized.dart';
+import 'package:universal_io/io.dart' as io;
 
 class StorageException implements Exception {}
 
@@ -225,6 +226,58 @@ class NoteUsecases {
         }
 
         return newNotes;
+      });
+    } on Exception catch (e) {
+      Log.e('$e');
+      throw ServerException();
+    }
+  }
+
+//**************** Rename Notes ****************
+
+  Future<Result<Note>> renameNote(
+    Note fromNote,
+    String newFileName,
+  ) async {
+    try {
+      var toNote = fromNote.copyWithFileName(newFileName);
+      toNote = toNote.updateModified();
+      _renameStorageNotes(fromNote, toNote);
+
+      await _renameGitNotes(fromNote.filePath, toNote.filePath);
+      return Result(toNote);
+    } on ServerException catch (error) {
+      return Result.fail(error);
+    }
+  }
+
+  Result _renameStorageNotes(Note fromNote, Note toNote) {
+    if (io.File(toNote.fullFilePath).existsSync()) {
+      return Result.fail(
+        Exception('Destination Note exists'),
+      );
+    }
+    final renameResult = fromNote.parent.renameNote(fromNote, toNote);
+    if (renameResult.isFailure) {
+      return fail(renameResult);
+    }
+    return renameResult;
+  }
+
+  Future<void> _renameGitNotes(
+    String oldPaths,
+    String newPaths,
+  ) async {
+    try {
+      await _gitOpLock.synchronized(() async {
+        final result = await gitRepo.renameNote(
+          oldPaths,
+          newPaths,
+        );
+        if (result.isFailure) {
+          Log.e("renameNote failed", result: result);
+          throw ServerException();
+        }
       });
     } on Exception catch (e) {
       Log.e('$e');
