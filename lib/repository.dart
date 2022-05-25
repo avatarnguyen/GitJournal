@@ -14,7 +14,6 @@ import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gitjournal/analytics/analytics.dart';
-import 'package:gitjournal/core/file/file_exceptions.dart';
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/core/file/file_storage_cache.dart';
 import 'package:gitjournal/core/folder/notes_folder_config.dart';
@@ -285,25 +284,17 @@ class GitJournalRepo with ChangeNotifier {
     await _fillFileStorageCache();
 
     // FIXME: We should report the notes that failed to load
-    return _loadLock.synchronized(() async {
-      var r = await rootFolder.loadRecursively();
-      if (r.isFailure) {
-        if (r.error is FileStorageCacheIncomplete) {
-          var ex = r.error as FileStorageCacheIncomplete;
-          Log.i("FileStorageCacheIncomplete ${ex.path}");
-          var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
-          await NoteUsecases.commitUnTrackedChanges(repo, gitConfig)
-              .throwOnError();
-          await _resetFileStorage();
-          return;
-        }
-      }
+    final result =
+        await noteUsecases.loadGitNotes(rootFolder, gitConfig, repoPath);
+    if (result.isFailure) {
+      await _resetFileStorage();
+    } else {
       await _notesCache.buildCache(rootFolder);
 
       var changes = await _gitRepo.numChanges();
       numChanges = changes ?? 0;
       notifyListeners();
-    });
+    }
   }
 
   Future<void> _fillFileStorageCache() {

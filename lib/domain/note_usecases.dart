@@ -1,8 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/exceptions.dart';
-import 'package:dart_git/git_async.dart';
-import 'package:dart_git/utils/result.dart';
 import 'package:git_bindings/git_bindings.dart';
 import 'package:gitjournal/core/commit_message_builder.dart';
 import 'package:gitjournal/core/file/file_exceptions.dart';
@@ -12,6 +10,7 @@ import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/settings/git_config.dart';
+import 'package:path/path.dart' as path;
 import 'package:synchronized/synchronized.dart';
 import 'package:universal_io/io.dart' as io;
 
@@ -155,6 +154,7 @@ class NoteUsecases {
         }
       });
     } on Exception catch (e) {
+      Log.e("remove Note exception $e");
       throw ServerException();
     }
   }
@@ -183,6 +183,7 @@ class NoteUsecases {
         }
       });
     } on Exception catch (e) {
+      Log.e("reset last commit exception $e");
       throw ServerException();
     }
   }
@@ -295,7 +296,11 @@ class NoteUsecases {
   }
 
 //**************** Load Notes ****************
-  Future<void> loadGitNotes(NotesFolderFS rootFolder) async {
+  Future<Result<int?>> loadGitNotes(
+    NotesFolderFS rootFolder,
+    GitConfig gitConfig,
+    String repoPath,
+  ) async {
     try {
       return _loadLock.synchronized(() async {
         var r = await rootFolder.loadRecursively();
@@ -304,18 +309,19 @@ class NoteUsecases {
             var ex = r.error as FileStorageCacheIncomplete;
             Log.i("FileStorageCacheIncomplete ${ex.path}");
             var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
-            await _commitUnTrackedChanges(repo, gitConfig).throwOnError();
-            await _resetFileStorage();
-            return;
+            await commitUnTrackedChanges(repo, gitConfig).throwOnError();
+            // await _resetFileStorage();
+            return Result.fail(ex);
           }
         }
-        await _notesCache.buildCache(rootFolder);
+        // await _notesCache.buildCache(rootFolder);
 
-        var changes = await gitRepo.numChanges();
+        final changes = await gitRepo.numChanges();
+        return Result(changes);
       });
-    } on Exception catch (e) {
-      Log.e('$e');
-      throw ServerException();
+    } on Exception catch (error) {
+      Log.e('$error');
+      return Result.fail(error);
     }
   }
 
@@ -363,7 +369,7 @@ class NoteUsecases {
       );
       if (anyFileInRepo == null) {
         Log.i("Adding .ignore file");
-        var ignoreFile = io.File(p.join(repoPath, ".gitignore"));
+        var ignoreFile = io.File(path.join(repoPath, ".gitignore"));
         ignoreFile.createSync();
 
         var repo = GitRepo(folderPath: repoPath);
