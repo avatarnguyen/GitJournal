@@ -24,24 +24,34 @@ class FolderUsecases {
     NotesFolderConfig folderConfig,
   ) async {
     return await _gitOpLock.synchronized(() async {
-      var newFolderPath = path.join(parent.folderPath, folderName);
-      var newFolder = NotesFolderFS(parent, newFolderPath, folderConfig);
-      var r = newFolder.create();
-      if (r.isFailure) {
-        Log.e("createFolder", result: r);
-        return fail(r);
+      final _storageResult =
+          _createStorageFolder(parent, folderName, folderConfig);
+      if (_storageResult.isFailure) {
+        return _storageResult;
       }
 
-      Log.d("Created New Folder: " + newFolderPath);
-      parent.addFolder(newFolder);
-
-      var result = await gitRepo.addFolder(newFolder);
-      if (result.isFailure) {
-        Log.e("createFolder", result: result);
-        return fail(result);
+      final gitResult = await gitRepo.addFolder(_storageResult.getOrThrow());
+      if (gitResult.isFailure) {
+        Log.e("createFolder", result: gitResult);
+        return fail(gitResult);
       }
 
       return Result(null);
     });
+  }
+
+  Result<NotesFolderFS> _createStorageFolder(
+      NotesFolderFS parent, String folderName, NotesFolderConfig folderConfig) {
+    var newFolderPath = path.join(parent.folderPath, folderName);
+    var newFolder = NotesFolderFS(parent, newFolderPath, folderConfig);
+    var r = newFolder.create();
+    if (r.isFailure) {
+      Log.e("createFolder", result: r);
+      return fail(r);
+    }
+
+    Log.d("Created New Folder: " + newFolderPath);
+    parent.addFolder(newFolder);
+    return Result(newFolder);
   }
 }
