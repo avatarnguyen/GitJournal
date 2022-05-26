@@ -248,7 +248,6 @@ class NoteUsecases {
   }
 
 //**************** Rename Notes ****************
-
   Future<Result<Note>> renameNote(
     Note fromNote,
     String newFileName,
@@ -256,8 +255,10 @@ class NoteUsecases {
     try {
       var toNote = fromNote.copyWithFileName(newFileName);
       toNote = toNote.updateModified();
-      _renameStorageNotes(fromNote, toNote);
-
+      final result = _renameStorageNotes(fromNote, toNote);
+      if (result.isFailure) {
+        return fail(result);
+      }
       await _renameGitNotes(fromNote.filePath, toNote.filePath);
       return Result(toNote);
     } on ServerException catch (error) {
