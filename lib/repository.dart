@@ -355,32 +355,29 @@ class GitJournalRepo with ChangeNotifier {
       await noteUsecases.gitFetch();
 
       attempt.add(SyncStatus.Merging);
-
       await noteUsecases.gitMerge();
 
       attempt.add(SyncStatus.Pushing);
       notifyListeners();
-
       noteLoadingFuture = _loadNotes();
-
       await noteUsecases.gitPush();
 
       Log.d("Synced!");
       attempt.add(SyncStatus.Done);
       numChanges = 0;
       notifyListeners();
-    } catch (e, stacktrace) {
-      Log.e("Failed to Sync", ex: e, stacktrace: stacktrace);
+    } catch (error, stacktrace) {
+      Log.e("Failed to Sync", ex: error, stacktrace: stacktrace);
 
-      var ex = e;
+      var ex = error;
       if (ex is! Exception) {
-        ex = Exception(e.toString());
+        ex = Exception(error.toString());
       }
       attempt.add(SyncStatus.Error, ex);
 
       notifyListeners();
-      if (e is Exception && shouldLogGitException(e)) {
-        await logException(e, stacktrace);
+      if (error is Exception && shouldLogGitException(error)) {
+        await logException(error, stacktrace);
       }
       if (!doNotThrow) rethrow;
     }
