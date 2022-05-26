@@ -5,6 +5,7 @@ import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:synchronized/synchronized.dart';
+import 'package:universal_io/io.dart' as io;
 
 class FolderUsecases {
   final GitNoteRepository gitRepo;
@@ -76,5 +77,26 @@ class FolderUsecases {
   }
 
 //**************** Remove Folder ****************
+  Future<Result> removeFolder(NotesFolderFS folder) async {
+    return await _gitOpLock.synchronized(() async {
+      Log.d("Got removeFolder lock");
+      Log.d("Removing Folder: " + folder.folderPath);
 
+      folder.parentFS!.removeFolder(folder);
+      Result<void> result = await _gitRemoveFolder(folder);
+      return result;
+    });
+  }
+
+  Future<Result<void>> _gitRemoveFolder(NotesFolderFS folder) async {
+    final result = await gitRepo.removeFolder(folder);
+    return result;
+  }
+
+  Result<bool> fileExists(String path) {
+    return catchAllSync(() {
+      var type = io.FileSystemEntity.typeSync(path);
+      return Result(type != io.FileSystemEntityType.notFound);
+    });
+  }
 }
