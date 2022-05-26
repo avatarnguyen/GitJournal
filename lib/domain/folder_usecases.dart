@@ -18,6 +18,7 @@ class FolderUsecases {
 
   late final Lock _gitOpLock;
 
+  //**************** Create Folder ****************
   Future<Result<void>> createFolder(
     NotesFolderFS parent,
     String folderName,
@@ -54,4 +55,26 @@ class FolderUsecases {
     parent.addFolder(newFolder);
     return Result(newFolder);
   }
+
+//**************** Rename Folder ****************
+  Future<Result> renameFolder(NotesFolderFS folder, String newName) async {
+    return await _gitOpLock.synchronized(() async {
+      final oldFolderPath = folder.folderPath;
+      Log.d("Renaming Folder from $oldFolderPath -> $newName");
+      folder.rename(newName);
+
+      return await _gitRenameFolder(oldFolderPath, folder);
+    });
+  }
+
+  Future<Result<void>> _gitRenameFolder(
+      String oldFolderPath, NotesFolderFS folder) async {
+    return await gitRepo.renameFolder(
+      oldFolderPath,
+      folder.folderPath,
+    );
+  }
+
+//**************** Remove Folder ****************
+
 }

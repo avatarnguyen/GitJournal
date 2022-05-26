@@ -441,23 +441,14 @@ class GitJournalRepo with ChangeNotifier {
 
     logEvent(Event.FolderRenamed);
 
-    await _gitOpLock.synchronized(() async {
-      var oldFolderPath = folder.folderPath;
-      Log.d("Renaming Folder from $oldFolderPath -> $newFolderName");
-      folder.rename(newFolderName);
+    final result = await folderUsecases.renameFolder(folder, newFolderName);
+    if (result.isFailure) {
+      Log.e("rename Folder failed", result: result);
+      return;
+    }
 
-      var result = await _gitRepo.renameFolder(
-        oldFolderPath,
-        folder.folderPath,
-      );
-      if (result.isFailure) {
-        Log.e("renameFolder", result: result);
-        return;
-      }
-
-      numChanges += 1;
-      notifyListeners();
-    });
+    numChanges += 1;
+    notifyListeners();
 
     unawaited(_syncNotes());
   }
@@ -468,16 +459,14 @@ class GitJournalRepo with ChangeNotifier {
 
     logEvent(Event.NoteRenamed);
 
-    return await noteUsecases.renameNote(fromNote, newFileName).then(
-      (result) {
-        if (result.isSuccess) {
-          numChanges += 1;
-          notifyListeners();
-          unawaited(_syncNotes());
-        }
-        return result;
-      },
-    );
+    final result = await noteUsecases.renameNote(fromNote, newFileName);
+
+    if (result.isSuccess) {
+      numChanges += 1;
+      notifyListeners();
+      unawaited(_syncNotes());
+    }
+    return result;
   }
 
   Future<Result<Note>> moveNote(Note note, NotesFolderFS destFolder) async {

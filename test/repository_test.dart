@@ -45,7 +45,7 @@ Future<void> main() async {
     // baseDir.deleteSync(recursive: true);
   });
 
-  group('Rename Folder - ', () {
+  group('Rename Note - ', () {
     setUp(() async {
       await _setup();
     });
