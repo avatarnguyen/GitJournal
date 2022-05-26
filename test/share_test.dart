@@ -13,16 +13,16 @@ import 'package:gitjournal/app.dart';
 import 'package:gitjournal/change_notifiers.dart';
 import 'package:gitjournal/core/folder/notes_folder_config.dart';
 import 'package:gitjournal/editors/note_title_editor.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/app_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
-dart';
+
 import 'lib.dart';
 
 void main() {
-  late GitJournalRepo repo;
+  late GitJournalPresenter repo;
   late RepositoryManager repoManager;
   late SharedPreferences pref;
   late String repoPath;

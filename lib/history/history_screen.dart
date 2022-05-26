@@ -12,15 +12,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:gitjournal/folder_views/folder_view.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/sync_attempt.dart';
 import 'package:gitjournal/widgets/app_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:timeline_tile/timeline_tile.dart';
-dart';
+
 import 'commit_data_widget.dart';
 
 class HistoryScreen extends StatelessWidget {
@@ -30,7 +30,7 @@ class HistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var gjRepo = Provider.of<GitJournalRepo>(context);
+    var gjRepo = Provider.of<GitJournalPresenter>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -43,7 +43,7 @@ class HistoryScreen extends StatelessWidget {
 }
 
 class HistoryWidget extends StatefulWidget {
-  final GitJournalRepo gjRepo;
+  final GitJournalPresenter gjRepo;
 
   String get repoPath => gjRepo.repoPath;
 

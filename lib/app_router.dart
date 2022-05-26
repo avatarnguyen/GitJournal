@@ -10,7 +10,7 @@ import 'package:gitjournal/account/account_screen.dart';
 import 'package:gitjournal/account/login_screen.dart';
 import 'package:gitjournal/core/markdown/md_yaml_doc_codec.dart';
 import 'package:gitjournal/editors/note_editor.dart';
-import 'package:gitjournal/git_journal_repo.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/history/history_screen.dart';
 import 'package:gitjournal/iap/purchase_screen.dart';
 import 'package:gitjournal/iap/purchase_thankyou_screen.dart';
@@ -71,7 +71,7 @@ class AppRouter {
 
   Route<dynamic> generateRoute(
     RouteSettings routeSettings,
-    GitJournalRepo repository,
+    GitJournalPresenter repository,
     String sharedText,
     List<String> sharedImages,
     Func0<void> callbackIfUsedShared,
@@ -111,7 +111,7 @@ class AppRouter {
 
   Widget? screenForRoute(
     String route,
-    GitJournalRepo repository,
+    GitJournalPresenter repository,
     StorageConfig storageConfig,
     String sharedText,
     List<String> sharedImages,

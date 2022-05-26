@@ -15,12 +15,12 @@ import 'package:gitjournal/folder_views/calendar_view.dart';
 import 'package:gitjournal/folder_views/card_view.dart';
 import 'package:gitjournal/folder_views/grid_view.dart';
 import 'package:gitjournal/folder_views/journal_view.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/utils/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
-dart';
+
 import 'common_types.dart';
 import 'standard_view.dart';
 
@@ -108,7 +108,7 @@ Future<void> openNoteEditor(
   if (showUndoSnackBar != null) {
     Log.d("Showing an undo snackbar");
 
-    var stateContainer = context.read<GitJournalRepo>();
+    var stateContainer = context.read<GitJournalPresenter>();
     var snackBar = buildUndoDeleteSnackbar(stateContainer, note);
     ScaffoldMessenger.of(context)
       ..removeCurrentSnackBar()

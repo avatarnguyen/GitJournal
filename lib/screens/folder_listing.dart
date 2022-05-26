@@ -11,7 +11,7 @@ import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/folder_views/folder_view.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
-import 'package:gitjournal/git_journal_repo.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/settings/app_config.dart';
 import 'package:gitjournal/utils/utils.dart';
 import 'package:gitjournal/widgets/app_bar_menu_button.dart';
@@ -108,7 +108,7 @@ class _FolderListingScreenState extends State<FolderListingScreen> {
               ),
             );
             if (folderName is String) {
-              var container = context.read<GitJournalRepo>();
+              var container = context.read<GitJournalPresenter>();
               container.renameFolder(_selectedFolder!, folderName);
             }
           } else if (value == "Create") {
@@ -117,7 +117,7 @@ class _FolderListingScreenState extends State<FolderListingScreen> {
               builder: (_) => CreateFolderAlertDialog(),
             );
             if (folderName is String) {
-              var repo = context.read<GitJournalRepo>();
+              var repo = context.read<GitJournalPresenter>();
               var r = await repo.createFolder(_selectedFolder!, folderName);
               showResultError(context, r);
             }
@@ -128,7 +128,7 @@ class _FolderListingScreenState extends State<FolderListingScreen> {
                 builder: (_) => DeleteFolderErrorDialog(),
               );
             } else {
-              var container = context.read<GitJournalRepo>();
+              var container = context.read<GitJournalPresenter>();
               container.removeFolder(_selectedFolder!);
             }
           }
@@ -176,7 +176,7 @@ class CreateFolderButton extends StatelessWidget {
           builder: (_) => CreateFolderAlertDialog(),
         );
         if (folderName is String) {
-          var repo = context.read<GitJournalRepo>();
+          var repo = context.read<GitJournalPresenter>();
           final notesFolder =
               Provider.of<NotesFolderFS>(context, listen: false);
 

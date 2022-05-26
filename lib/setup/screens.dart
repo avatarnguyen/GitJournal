@@ -13,8 +13,8 @@ import 'package:gitjournal/analytics/analytics.dart';
 import 'package:gitjournal/apis/githost_factory.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/settings/git_config.dart';
 import 'package:gitjournal/settings/storage_config.dart';
 import 'package:gitjournal/setup/autoconfigure.dart';
@@ -33,7 +33,7 @@ import 'package:provider/provider.dart';
 import 'package:time/time.dart';
 import 'package:universal_io/io.dart' show Platform, Directory;
 import 'package:url_launcher/url_launcher.dart';
-dart';
+
 import 'git_transfer_progress.dart';
 
 class GitHostSetupScreen extends StatefulWidget {
@@ -425,7 +425,7 @@ class GitHostSetupScreenState extends State<GitHostSetupScreen> {
   }
 
   Future<void> _removeRemote() async {
-    var repo = context.read<GitJournalRepo>();
+    var repo = context.read<GitJournalPresenter>();
 
     var r1 = await repo.ensureValidRepo();
     if (r1.isFailure) {
@@ -537,7 +537,7 @@ class GitHostSetupScreenState extends State<GitHostSetupScreen> {
       return;
     }
 
-    var repo = context.read<GitJournalRepo>();
+    var repo = context.read<GitJournalPresenter>();
     var basePath = repo.gitBaseDirectory;
 
     var gitConfig = Provider.of<GitConfig>(context, listen: false);

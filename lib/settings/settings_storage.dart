@@ -12,8 +12,8 @@ import 'package:gitjournal/core/folder/notes_folder_config.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/features.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/settings_filetypes.dart';
 import 'package:gitjournal/settings/settings_images.dart';
@@ -30,7 +30,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:universal_io/ioverlay.dart';
+import 'package:universal_io/io.dart';
 
 class SettingsStorageScreen extends StatelessWidget {
   static const routePath = '/settings/storage';
@@ -40,7 +40,7 @@ class SettingsStorageScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     var folderConfig = Provider.of<NotesFolderConfig>(context);
     var storageConfig = Provider.of<StorageConfig>(context);
-    final repo = Provider.of<GitJournalRepo>(context);
+    final repo = Provider.of<GitJournalPresenter>(context);
     var settings = Provider.of<Settings>(context);
 
     var list = ListView(

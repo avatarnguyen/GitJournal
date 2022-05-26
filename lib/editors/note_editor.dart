@@ -6,14 +6,10 @@
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:path/path.dart' as p;
-import 'package:provider/provider.dart';
-
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/image.dart' as core;
@@ -32,8 +28,8 @@ import 'package:gitjournal/editors/org_editor.dart';
 import 'package:gitjournal/editors/raw_editor.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/git_journal_repo.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/utils/result.dart';
 import 'package:gitjournal/utils/utils.dart';
@@ -41,6 +37,8 @@ import 'package:gitjournal/widgets/folder_selection_dialog.dart';
 import 'package:gitjournal/widgets/note_delete_dialog.dart';
 import 'package:gitjournal/widgets/note_tag_editor.dart';
 import 'package:gitjournal/widgets/rename_dialog.dart';
+import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
 
 class ShowUndoSnackbar {}
 
@@ -234,7 +232,7 @@ class NoteEditorState extends State<NoteEditor>
       if (!_noteModified(note)) return;
 
       Log.d("App Lost Focus - saving note");
-      var repo = Provider.of<GitJournalRepo>(context, listen: false);
+      var repo = Provider.of<GitJournalPresenter>(context, listen: false);
       repo.saveNoteToDisk(note).then((r) {
         if (r.isFailure) {
           Log.e("Failed to save note", ex: r.error, stacktrace: r.stackTrace);
@@ -374,7 +372,7 @@ class NoteEditorState extends State<NoteEditor>
         _newNoteRenamed = true;
       });
     } else {
-      var container = context.read<GitJournalRepo>();
+      var container = context.read<GitJournalPresenter>();
 
       var originalNote = widget.existingNote!;
       var renameResult = await container.renameNote(originalNote, newFileName);
@@ -442,7 +440,7 @@ class NoteEditorState extends State<NoteEditor>
     }
     if (shouldDelete == true) {
       if (!_isNewNote) {
-        var stateContainer = context.read<GitJournalRepo>();
+        var stateContainer = context.read<GitJournalPresenter>();
         stateContainer.removeNote(note);
       }
 
@@ -490,7 +488,7 @@ class NoteEditorState extends State<NoteEditor>
 
     Log.d("Note modified - saving");
     try {
-      var repo = context.read<GitJournalRepo>();
+      var repo = context.read<GitJournalPresenter>();
       if (_isNewNote && !_newNoteRenamed) {
         if (note.shouldRebuildPath) {
           Log.d("Rebuilding Note's FileName");
@@ -555,7 +553,7 @@ class NoteEditorState extends State<NoteEditor>
           _note = note.copyWith(parent: destFolder);
         });
       } else {
-        var stateContainer = context.read<GitJournalRepo>();
+        var stateContainer = context.read<GitJournalPresenter>();
         var r = await stateContainer.moveNote(note, destFolder);
         if (r.isFailure) {
           showResultError(context, r);
@@ -574,7 +572,7 @@ class NoteEditorState extends State<NoteEditor>
     assert(note.oid.isEmpty);
 
     if (!_isNewNote) {
-      var stateContainer = context.read<GitJournalRepo>();
+      var stateContainer = context.read<GitJournalPresenter>();
       stateContainer.discardChanges(note);
     }
 

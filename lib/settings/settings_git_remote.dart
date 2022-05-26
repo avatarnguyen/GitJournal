@@ -8,8 +8,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/settings/git_config.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/storage_config.dart';
@@ -21,7 +21,7 @@ import 'package:gitjournal/utils/utils.dart';
 import 'package:gitjournal/widgets/future_builder_with_progress.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
-import 'package:universal_io/ioogress.dart';
+import 'package:universal_io/io.dart';
 
 class GitRemoteSettingsScreen extends StatefulWidget {
   static const routePath = '/settings/gitRemote';
@@ -41,7 +41,7 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
     var textTheme = Theme.of(context).textTheme;
     var settings = Provider.of<Settings>(context);
     var gitConfig = Provider.of<GitConfig>(context);
-    var repo = Provider.of<GitJournalRepo>(context);
+    var repo = Provider.of<GitJournalPresenter>(context);
 
     if (remoteHost.isEmpty) {
       repo.remoteConfigs().then((list) {
@@ -129,7 +129,7 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
           onPressed: _reconfigureGitHost,
         ),
         FutureBuilderWithProgress(future: () async {
-          var repo = context.watch<GitJournalRepo>();
+          var repo = context.watch<GitJournalPresenter>();
           var result = await repo.canResetHard();
           if (result.isFailure) {
             showResultError(context, result);
@@ -234,7 +234,7 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
       return;
     }
 
-    var repo = context.read<GitJournalRepo>();
+    var repo = context.read<GitJournalPresenter>();
     var gitDir = repo.gitBaseDirectory;
 
     // Figure out the next available folder
@@ -280,7 +280,7 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
       return;
     }
 
-    var repo = context.read<GitJournalRepo>();
+    var repo = context.read<GitJournalPresenter>();
     var result = await repo.resetHard();
     showResultError(context, result);
 

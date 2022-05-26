@@ -7,12 +7,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/settings_git_remote.dart';
 import 'package:gitjournal/settings/settings_git_widgets.dart';
 import 'package:gitjournal/settings/widgets/settings_header.dart';
-import 'package:provider/provigs_header.dart';
+import 'package:provider/provider.dart';
 
 class SettingsGit extends StatelessWidget {
   static const routePath = '/settings/git';
@@ -21,7 +21,7 @@ class SettingsGit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var repo = Provider.of<GitJournalRepo>(context);
+    var repo = Provider.of<GitJournalPresenter>(context);
 
     var list = ListView(
       children: [

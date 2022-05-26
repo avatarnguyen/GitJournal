@@ -10,7 +10,7 @@ import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/views/inline_tags_view.dart';
 import 'package:gitjournal/core/views/note_links_view.dart';
 import 'package:gitjournal/core/views/summary_view.dart';
-import 'package:gitjournal/git_journal_repo.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/app_config.dart';
 import 'package:gitjournal/settings/git_config.dart';
@@ -51,20 +51,20 @@ class GitJournalChangeNotifiers extends StatelessWidget {
     );
   }
 
-  Widget buildForRepo(GitJournalRepo? repo) {
+  Widget buildForRepo(GitJournalPresenter? repo) {
     if (repo == null) {
       return child;
     }
 
-    return ChangeNotifierProvider<GitJournalRepo>.value(
+    return ChangeNotifierProvider<GitJournalPresenter>.value(
       value: repoManager.currentRepo!,
-      child: Consumer<GitJournalRepo>(
+      child: Consumer<GitJournalPresenter>(
         builder: (_, repo, __) => _buildRepoDependentProviders(repo),
       ),
     );
   }
 
-  Widget _buildRepoDependentProviders(GitJournalRepo repo) {
+  Widget _buildRepoDependentProviders(GitJournalPresenter repo) {
     var folderConfig = repo.folderConfig;
 
     return MultiProvider(
@@ -84,7 +84,7 @@ class GitJournalChangeNotifiers extends StatelessWidget {
     );
   }
 
-  Widget _buildNoteMaterializedViews(GitJournalRepo repo, Widget child) {
+  Widget _buildNoteMaterializedViews(GitJournalPresenter repo, Widget child) {
     var repoId = repo.id;
     return Nested(
       children: [

@@ -19,12 +19,12 @@ import 'package:gitjournal/editors/note_body_editor.dart';
 import 'package:gitjournal/editors/note_title_editor.dart';
 import 'package:gitjournal/features.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/widgets/settings_list_preference.dart';
 import 'package:gitjournal/widgets/pro_overlay.dart';
 import 'package:provider/provider.dart';
-import 'package:time/timeverlay.dart';
+import 'package:time/time.dart';
 
 class NoteMetadataSettingsScreen extends StatefulWidget {
   static const routePath = '/settings/noteMetaData';
@@ -62,7 +62,7 @@ class _NoteMetadataSettingsScreenState
       }
     }
 
-    var repo = context.read<GitJournalRepo>();
+    var repo = context.read<GitJournalPresenter>();
     var parent = NotesFolderFS.root(folderConfig, repo.fileStorage);
     var note = Note.build(
       title: tr("settings.noteMetaData.exampleTitle"),

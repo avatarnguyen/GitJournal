@@ -5,19 +5,19 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/storage_config.dart';
 import 'package:gitjournal/utils/result.dart';
 import 'package:path/path.dart' as p;
-import 'package:shared_preferences/shared_preferencesresult.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RepositoryManager with ChangeNotifier {
   var repoIds = <String>[];
   var currentId = DEFAULT_ID;
 
-  GitJournalRepo? _repo;
+  GitJournalPresenter? _repo;
   Object? _repoError;
 
   final String gitBaseDir;
@@ -34,10 +34,10 @@ class RepositoryManager with ChangeNotifier {
     Log.i("Current Id $currentId");
   }
 
-  GitJournalRepo? get currentRepo => _repo;
+  GitJournalPresenter? get currentRepo => _repo;
   Object? get currentRepoError => _repoError;
 
-  Future<Result<GitJournalRepo>> buildActiveRepository({
+  Future<Result<GitJournalPresenter>> buildActiveRepository({
     bool loadFromCache = true,
     bool syncOnBoot = true,
   }) async {
@@ -47,7 +47,7 @@ class RepositoryManager with ChangeNotifier {
     _repoError = null;
     notifyListeners();
 
-    var r = await GitJournalRepo.load(
+    var r = await GitJournalPresenter.load(
       repoManager: this,
       gitBaseDir: gitBaseDir,
       cacheDir: repoCacheDir,
@@ -141,7 +141,7 @@ class RepositoryManager with ChangeNotifier {
   Future<void> cleanupInvalidRepos() async {
     var invalidIds = <String>[];
     for (var id in repoIds) {
-      var exists = await GitJournalRepo.exists(
+      var exists = await GitJournalPresenter.exists(
           gitBaseDir: gitBaseDir, pref: pref, id: id);
       if (!exists) {
         invalidIds.add(id);

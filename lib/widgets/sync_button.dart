@@ -12,10 +12,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:git_bindings/git_bindings.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/sync_attempt.dart';
 import 'package:gitjournal/utils/utils.dart';
-import 'package:provider/provider/utils.dart';
+import 'package:provider/provider.dart';
 
 class SyncButton extends StatefulWidget {
   @override
@@ -46,7 +46,7 @@ class _SyncButtonState extends State<SyncButton> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = Provider.of<GitJournalRepo>(context);
+    final repo = Provider.of<GitJournalPresenter>(context);
 
     if (_connectivity == ConnectivityResult.none) {
       return GitPendingChangesBadge(
@@ -103,7 +103,7 @@ class _SyncButtonState extends State<SyncButton> {
 
   Future<void> _syncRepo() async {
     try {
-      final repo = Provider.of<GitJournalRepo>(context, listen: false);
+      final repo = Provider.of<GitJournalPresenter>(context, listen: false);
       await repo.syncNotes();
     } on GitException catch (e) {
       showErrorMessageSnackbar(
@@ -116,7 +116,7 @@ class _SyncButtonState extends State<SyncButton> {
   }
 
   IconData _syncStatusIcon() {
-    final repo = Provider.of<GitJournalRepo>(context);
+    final repo = Provider.of<GitJournalPresenter>(context);
     switch (repo.syncStatus) {
       case SyncStatus.Error:
         return Icons.cloud_off;
@@ -190,7 +190,7 @@ class GitPendingChangesBadge extends StatelessWidget {
       color: darkMode ? Colors.black : Colors.white,
     );
 
-    final repo = Provider.of<GitJournalRepo>(context);
+    final repo = Provider.of<GitJournalPresenter>(context);
 
     return Badge(
       badgeContent: Text(repo.numChanges.toString(), style: style),

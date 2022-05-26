@@ -8,8 +8,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/git_journal_repo.dart';
 import 'package:provider/provider.dart';
 
 class CacheLoadingScreen extends StatelessWidget {
@@ -17,7 +17,7 @@ class CacheLoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var fileStorage = context.read<GitJournalRepo>().fileStorage;
+    var fileStorage = context.read<GitJournalPresenter>().fileStorage;
     return _CacheLoadingScreen(fileStorage);
   }
 }

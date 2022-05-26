@@ -11,10 +11,10 @@ import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/folder_views/folder_view.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/screens/cache_loading_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:provider/providerscreen.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   static const routePath = '/';
@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return Container();
     }
 
-    var repo = context.watch<GitJournalRepo>();
+    var repo = context.watch<GitJournalPresenter>();
     if (!repo.fileStorageCacheReady) {
       return const CacheLoadingScreen();
     }

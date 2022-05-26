@@ -38,7 +38,7 @@ import 'package:time/time.dart';
 import 'package:universal_io/io.dart' show Platform;
 import 'package:universal_io/io.dart' as io;
 
-class GitJournalRepo with ChangeNotifier {
+class GitJournalPresenter with ChangeNotifier {
   final RepositoryManager repoManager;
   final StorageConfig storageConfig;
   final GitConfig gitConfig;
@@ -95,7 +95,7 @@ class GitJournalRepo with ChangeNotifier {
     return GitRepository.isValidRepo(repoPath);
   }
 
-  static Future<Result<GitJournalRepo>> load({
+  static Future<Result<GitJournalPresenter>> load({
     required String gitBaseDir,
     required String cacheDir,
     required SharedPreferences pref,
@@ -190,7 +190,7 @@ class GitJournalRepo with ChangeNotifier {
     var headR = await repo.headHash();
     var head = headR.isFailure ? GitHash.zero() : headR.getOrThrow();
 
-    var gjRepo = GitJournalRepo._internal(
+    var gjRepo = GitJournalPresenter._internal(
       repoManager: repoManager,
       repoPath: repoPath,
       gitBaseDirectory: gitBaseDir,
@@ -212,7 +212,7 @@ class GitJournalRepo with ChangeNotifier {
     return Result(gjRepo);
   }
 
-  GitJournalRepo._internal({
+  GitJournalPresenter._internal({
     required this.id,
     required this.repoPath,
     required this.repoManager,
@@ -569,6 +569,12 @@ class GitJournalRepo with ChangeNotifier {
     return _noteAddedResult;
   }
 
+  Result<bool> fileExists(String path) {
+    return folderUsecases.fileExists(path);
+  }
+
+  // *************** Git Methods ********************************
+
   Future<void> completeGitHostSetup(
       String repoFolderName, String remoteName) async {
     storageConfig.folderName = repoFolderName;
@@ -790,15 +796,12 @@ class GitJournalRepo with ChangeNotifier {
     return Result(null);
   }
 
-  Result<bool> fileExists(String path) {
-    return folderUsecases.fileExists(path);
-  }
-
   Future<Result<void>> init(String repoPath) async {
     return GitRepository.init(repoPath, defaultBranch: DEFAULT_BRANCH);
   }
 }
 
+// *********** End class ************
 Future<void> _copyDirectory(String source, String destination) async {
   await for (var entity in io.Directory(source).list(recursive: false)) {
     dynamic _;

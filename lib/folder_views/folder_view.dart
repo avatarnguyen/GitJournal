@@ -22,7 +22,7 @@ import 'package:gitjournal/editors/note_editor.dart';
 import 'package:gitjournal/folder_views/common.dart';
 import 'package:gitjournal/folder_views/standard_view.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/widgets/settings_header.dart';
 import 'package:gitjournal/utils/utils.dart';
@@ -34,7 +34,7 @@ import 'package:gitjournal/widgets/note_delete_dialog.dart';
 import 'package:gitjournal/widgets/note_search_delegate.dart';
 import 'package:gitjournal/widgets/sorting_mode_selector.dart';
 import 'package:gitjournal/widgets/sync_button.dart';
-import 'package:provider/providerbutton.dart';
+import 'package:provider/provider.dart';
 
 enum DropDownChoices {
   SortingOptions,
@@ -524,7 +524,7 @@ class _FolderViewState extends State<FolderView> {
   }
 
   List<Widget> _buildNoteActions() {
-    final repo = Provider.of<GitJournalRepo>(context);
+    final repo = Provider.of<GitJournalPresenter>(context);
 
     var extraActions = PopupMenuButton<DropDownChoices>(
       key: const ValueKey("PopupMenu"),
@@ -625,7 +625,7 @@ class _FolderViewState extends State<FolderView> {
           true;
     }
     if (shouldDelete == true) {
-      var repo = context.read<GitJournalRepo>();
+      var repo = context.read<GitJournalPresenter>();
       repo.removeNotes(_selectedNotes);
     }
 
@@ -638,7 +638,7 @@ class _FolderViewState extends State<FolderView> {
       builder: (context) => FolderSelectionDialog(),
     );
     if (destFolder != null) {
-      var repo = context.read<GitJournalRepo>();
+      var repo = context.read<GitJournalPresenter>();
       var r = await repo.moveNotes(_selectedNotes, destFolder);
       showResultError(context, r);
     }
@@ -672,7 +672,7 @@ class _SliverHeader extends StatelessWidget {
 
 Future<void> syncRepo(BuildContext context) async {
   try {
-    var container = context.read<GitJournalRepo>();
+    var container = context.read<GitJournalPresenter>();
     await container.syncNotes();
   } on GitException catch (e) {
     showErrorMessageSnackbar(

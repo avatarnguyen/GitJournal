@@ -11,7 +11,7 @@ import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/notes/note.dart';
-import 'package:gitjournal/git_journal_repo.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -23,7 +23,7 @@ Future<void> main() async {
   late String repoPath;
 
   final headHash = GitHash('c8a879a4a9c27abcc27a4d2ee2b2ba0aad5fc940');
-  late GitJournalRepo repo;
+  late GitJournalPresenter repo;
 
   setUpAll(gjSetupAllTests);
 

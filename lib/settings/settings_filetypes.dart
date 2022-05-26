@@ -10,7 +10,7 @@ import 'package:gitjournal/core/file/file.dart';
 import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
-import 'package:gitjournal/git_journal_repo.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
@@ -120,7 +120,7 @@ class _NoteFileTypesSettingsState extends State<NoteFileTypesSettings> {
         }
         config.save();
 
-        var repo = context.read<GitJournalRepo>();
+        var repo = context.read<GitJournalPresenter>();
         repo.reloadNotes();
       },
     );

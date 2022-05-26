@@ -8,8 +8,8 @@ import 'dart:io';
 
 import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:dart_git/utils/result.dart';
+import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/git_journal_repo.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/storage_config.dart';
@@ -51,7 +51,7 @@ class TestData {
   final Directory baseDir;
   final String repoPath;
   final SharedPreferences pref;
-  final GitJournalRepo repo;
+  final GitJournalPresenter repo;
   final RepositoryManager repoManager;
 
   TestData._(
