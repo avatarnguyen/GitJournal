@@ -33,7 +33,7 @@ import 'package:gitjournal/editors/raw_editor.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_repo.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/utils/result.dart';
 import 'package:gitjournal/utils/utils.dart';

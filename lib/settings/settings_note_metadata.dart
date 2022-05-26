@@ -4,14 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import 'package:flutter/material.dart';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:flutter/material.dart';
 import 'package:function_types/function_types.dart';
-import 'package:provider/provider.dart';
-import 'package:time/time.dart';
-
 import 'package:gitjournal/core/file/file.dart';
 import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
@@ -27,6 +23,8 @@ import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/widgets/settings_list_preference.dart';
 import 'package:gitjournal/widgets/pro_overlay.dart';
+import 'package:provider/provider.dart';
+import 'package:time/timeverlay.dart';
 
 class NoteMetadataSettingsScreen extends StatefulWidget {
   static const routePath = '/settings/noteMetaData';

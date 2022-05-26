@@ -5,18 +5,16 @@
  */
 
 import 'package:flutter/material.dart';
-
 import 'package:function_types/function_types.dart';
-
 import 'package:gitjournal/account/account_screen.dart';
 import 'package:gitjournal/account/login_screen.dart';
 import 'package:gitjournal/core/markdown/md_yaml_doc_codec.dart';
 import 'package:gitjournal/editors/note_editor.dart';
+import 'package:gitjournal/git_journal_repo.dart';
 import 'package:gitjournal/history/history_screen.dart';
 import 'package:gitjournal/iap/purchase_screen.dart';
 import 'package:gitjournal/iap/purchase_thankyou_screen.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/screens/error_screen.dart';
 import 'package:gitjournal/screens/folder_listing.dart';
 import 'package:gitjournal/screens/graph_view.dart';

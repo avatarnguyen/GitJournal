@@ -11,7 +11,7 @@ import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/notes/note.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_repo.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -258,7 +258,7 @@ Future<void> main() async {
       await _setup();
     });
 
-    test('Note from root to Folder', () async {
+    test('Move - Note from root to Folder', () async {
       var note = repo.rootFolder.getNoteWithSpec('1.md')!;
       var folder = repo.rootFolder.getFolderWithSpec('f1')!;
 
@@ -278,7 +278,7 @@ Future<void> main() async {
       expect(root.getNoteWithSpec('f1/1.md'), isNotNull);
     });
 
-    test('Note from Folder to Root', () async {
+    test('Move - Note from Folder to Root', () async {
       var note = repo.rootFolder.getNoteWithSpec('f1/3.md')!;
       var folder = repo.rootFolder;
 
@@ -298,7 +298,7 @@ Future<void> main() async {
       expect(root.getNoteWithSpec('3.md'), isNotNull);
     });
 
-    test('To New Folder', () async {
+    test('Move - To New Folder', () async {
       var note = repo.rootFolder.getNoteWithSpec('1.md')!;
       var folder = repo.rootFolder.getOrBuildFolderWithSpec('f2');
       folder.create();
@@ -319,7 +319,7 @@ Future<void> main() async {
       expect(root.getNoteWithSpec('f2/1.md'), isNotNull);
     });
 
-    test('To New Folder Failure', () async {
+    test('Move - To New Folder Failure', () async {
       var note = repo.rootFolder.getNoteWithSpec('1.md')!;
       var folder = repo.rootFolder.getOrBuildFolderWithSpec('f2');
 
@@ -379,6 +379,52 @@ Future<void> main() async {
     var headCommit = gitRepo.headCommit().getOrThrow();
     expect(headCommit.parents.length, 1);
     expect(headCommit.parents[0], headHash);
+  });
+
+  group('Folder - ', () {
+    setUp(() async {
+      await _setup();
+    });
+
+    test('Create folder', () async {
+      const folderName = 'test_removed';
+      await repo.createFolder(repo.rootFolder, folderName);
+
+      final folder = repo.rootFolder.getFolderWithSpec(folderName);
+      expect(folder?.rootFolder, repo.rootFolder);
+      expect(folder?.folderName, folderName);
+
+      final gitRepo = GitRepository.load(repoPath).getOrThrow();
+      expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+
+      var headCommit = gitRepo.headCommit().getOrThrow();
+      expect(headCommit.parents.length, 1);
+      expect(headCommit.parents[0], headHash);
+    });
+
+    test('Remove folder', () async {
+      const folderName = 'test_removed';
+      await repo.createFolder(repo.rootFolder, folderName);
+      //
+      final folder = repo.rootFolder.getFolderWithSpec(folderName);
+      expect(folder?.rootFolder, repo.rootFolder);
+      expect(folder?.folderName, folderName);
+
+      final removeHeadHash =
+          GitHash('7fc65b59170bdc91013eb56cdc65fa3307f2e7de');
+      await _setup(head: removeHeadHash);
+      await repo.removeFolder(folder!);
+
+      final removedFolder = repo.rootFolder.getFolderWithSpec(folderName);
+      expect(removedFolder, isNull);
+
+      final gitRepo = GitRepository.load(repoPath).getOrThrow();
+      expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+
+      var headCommit = gitRepo.headCommit().getOrThrow();
+      expect(headCommit.parents.length, 1);
+      expect(headCommit.parents[0], isNot(removeHeadHash));
+    });
   });
 }
 

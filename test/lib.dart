@@ -9,7 +9,7 @@ import 'dart:io';
 import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:dart_git/utils/result.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_repo.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/storage_config.dart';

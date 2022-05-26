@@ -418,21 +418,14 @@ class GitJournalRepo with ChangeNotifier {
   Future<void> removeFolder(NotesFolderFS folder) async {
     logEvent(Event.FolderDeleted);
 
-    await _gitOpLock.synchronized(() async {
-      Log.d("Got removeFolder lock");
-      Log.d("Removing Folder: " + folder.folderPath);
+    final result = await folderUsecases.removeFolder(folder);
+    if (result.isFailure) {
+      Log.e("removeFolder", result: result);
+      return;
+    }
 
-      folder.parentFS!.removeFolder(folder);
-      var result = await _gitRepo.removeFolder(folder);
-      if (result.isFailure) {
-        Log.e("removeFolder", result: result);
-        return;
-      }
-
-      numChanges += 1;
-      notifyListeners();
-    });
-
+    numChanges += 1;
+    notifyListeners();
     unawaited(_syncNotes());
   }
 
@@ -720,9 +713,8 @@ class GitJournalRepo with ChangeNotifier {
   }
 
   Future<void> delete() async {
-    dynamic _;
-    _ = await io.Directory(repoPath).delete(recursive: true);
-    _ = await io.Directory(cacheDir).delete(recursive: true);
+    await io.Directory(repoPath).delete(recursive: true);
+    await io.Directory(cacheDir).delete(recursive: true);
   }
 
   /// reset --hard the current branch to its remote branch
@@ -799,10 +791,7 @@ class GitJournalRepo with ChangeNotifier {
   }
 
   Result<bool> fileExists(String path) {
-    return catchAllSync(() {
-      var type = io.FileSystemEntity.typeSync(path);
-      return Result(type != io.FileSystemEntityType.notFound);
-    });
+    return folderUsecases.fileExists(path);
   }
 
   Future<Result<void>> init(String repoPath) async {

@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_repo.dart';
 import 'package:provider/provider.dart';
 
 class CacheLoadingScreen extends StatelessWidget {

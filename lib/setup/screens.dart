@@ -4,18 +4,11 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:function_types/function_types.dart';
-import 'package:path/path.dart' as p;
-import 'package:provider/provider.dart';
-import 'package:time/time.dart';
-import 'package:universal_io/io.dart' show Platform, Directory;
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:gitjournal/analytics/analytics.dart';
 import 'package:gitjournal/apis/githost_factory.dart';
 import 'package:gitjournal/error_reporting.dart';
@@ -35,6 +28,12 @@ import 'package:gitjournal/setup/repo_selector.dart';
 import 'package:gitjournal/setup/sshkey.dart';
 import 'package:gitjournal/ssh/keygen.dart';
 import 'package:gitjournal/utils/utils.dart';
+import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
+import 'package:time/time.dart';
+import 'package:universal_io/io.dart' show Platform, Directory;
+import 'package:url_launcher/url_launcher.dart';
+dart';
 import 'git_transfer_progress.dart';
 
 class GitHostSetupScreen extends StatefulWidget {

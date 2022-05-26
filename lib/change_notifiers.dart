@@ -5,23 +5,21 @@
  */
 
 import 'package:flutter/material.dart';
-
-import 'package:nested/nested.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:gitjournal/core/folder/notes_folder_config.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/views/inline_tags_view.dart';
 import 'package:gitjournal/core/views/note_links_view.dart';
 import 'package:gitjournal/core/views/summary_view.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_repo.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/app_config.dart';
 import 'package:gitjournal/settings/git_config.dart';
 import 'package:gitjournal/settings/markdown_renderer_config.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/storage_config.dart';
+import 'package:nested/nested.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GitJournalChangeNotifiers extends StatelessWidget {
   final RepositoryManager repoManager;
@@ -58,7 +56,7 @@ class GitJournalChangeNotifiers extends StatelessWidget {
       return child;
     }
 
-    return ChangeNotifierProvider.value(
+    return ChangeNotifierProvider<GitJournalRepo>.value(
       value: repoManager.currentRepo!,
       child: Consumer<GitJournalRepo>(
         builder: (_, repo, __) => _buildRepoDependentProviders(repo),

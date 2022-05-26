@@ -4,17 +4,15 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import 'package:flutter/material.dart';
-
 import 'package:easy_localization/easy_localization.dart';
-import 'package:path/path.dart' as p;
-import 'package:provider/provider.dart';
-
+import 'package:flutter/material.dart';
 import 'package:gitjournal/core/file/file.dart';
 import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/git_journal_repo.dart';
+import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
 
 class NoteFileTypesSettings extends StatefulWidget {
   static const routePath = '/settings/fileTypes';
