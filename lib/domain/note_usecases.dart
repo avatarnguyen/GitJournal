@@ -8,15 +8,12 @@ import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
+import 'package:gitjournal/domain/exception.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/settings/git_config.dart';
 import 'package:path/path.dart' as path;
 import 'package:synchronized/synchronized.dart';
 import 'package:universal_io/io.dart' as io;
-
-class StorageException implements Exception {}
-
-class ServerException implements Exception {}
 
 class NoteUsecases {
   final GitNoteRepository gitRepo;
@@ -25,6 +22,7 @@ class NoteUsecases {
 
   final _gitOpLock = Lock();
   final _loadLock = Lock();
+  final _networkLock = Lock();
 
   //**************** Add Note ****************
   Future<Result<Note>> addNote(Note note) async {
@@ -329,6 +327,11 @@ class NoteUsecases {
     GitAsyncRepository repo,
     GitConfig gitConfig,
   ) async {
+    return await _commitUnTracked(repo, gitConfig);
+  }
+
+  static Future<Result<void>> _commitUnTracked(
+      GitAsyncRepository repo, GitConfig gitConfig) async {
     var timer = Stopwatch()..start();
     //
     // Check for un-committed files and save them
@@ -384,5 +387,43 @@ class NoteUsecases {
     } catch (ex, st) {
       Log.e("_ensureOneCommitInRepo", ex: ex, stacktrace: st);
     }
+  }
+
+//**************** Git ****************
+  Future<void> gitPush() async {
+    await _networkLock.synchronized(() async {
+      await gitRepo.push().throwOnError();
+    });
+  }
+
+  Future<void> gitMerge() async {
+    await _gitOpLock.synchronized(() async {
+      var r = await gitRepo.merge();
+      if (r.isFailure) {
+        var ex = r.error!;
+        // When there is nothing to merge into
+        if (ex is! GitRefNotFound) {
+          throw ex;
+          // FIXME: Do not throw this exception, try to solve it somehow!!
+        }
+      }
+    });
+  }
+
+  Future<void> gitFetch() async {
+    await _networkLock.synchronized(() async {
+      await gitRepo.fetch().throwOnError();
+    });
+  }
+
+  Future<Result> gitLoadAsync(String repoPath, GitConfig config) async {
+    final repoR = await GitAsyncRepository.load(repoPath);
+    if (repoR.isFailure) {
+      Log.e("SyncNotes Failed to Load Repo", result: repoR);
+      return repoR;
+    }
+    final repo = repoR.getOrThrow();
+    await _commitUnTracked(repo, config).throwOnError();
+    return Result(repo);
   }
 }
