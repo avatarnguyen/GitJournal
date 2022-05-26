@@ -20,6 +20,7 @@ import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/notes_cache.dart';
+import 'package:gitjournal/domain/folder_usecases.dart';
 import 'package:gitjournal/domain/note_usecases.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/logger/logger.dart';
@@ -48,8 +49,8 @@ class GitJournalRepo with ChangeNotifier {
   final FileStorageCache fileStorageCache;
 
   final _gitOpLock = Lock();
-  final _loadLock = Lock();
-  final _networkLock = Lock();
+  // final _loadLock = Lock();
+  // final _networkLock = Lock();
   final _cacheBuildingLock = Lock();
 
   /// The private directory where the 'git repo' is stored.
@@ -64,6 +65,7 @@ class GitJournalRepo with ChangeNotifier {
   late final NotesFolderFS rootFolder;
 
   late final NoteUsecases noteUsecases;
+  late final FolderUsecases folderUsecases;
 
   //
   // Mutable stuff
@@ -233,7 +235,9 @@ class GitJournalRepo with ChangeNotifier {
     _currentBranch = currentBranch;
 
     // Init NoteUsecases instance
-    noteUsecases = NoteUsecases(_gitRepo);
+    noteUsecases = NoteUsecases(_gitRepo, gitOpLock: _gitOpLock);
+    // Init Folder Usecases instance
+    folderUsecases = FolderUsecases(_gitRepo, gitOpLock: _gitOpLock);
 
     Log.i("Branch $_currentBranch");
 
@@ -398,32 +402,17 @@ class GitJournalRepo with ChangeNotifier {
       NotesFolderFS parent, String folderName) async {
     logEvent(Event.FolderAdded);
 
-    var r = await _gitOpLock.synchronized(() async {
-      var newFolderPath = p.join(parent.folderPath, folderName);
-      var newFolder = NotesFolderFS(parent, newFolderPath, folderConfig);
-      var r = newFolder.create();
-      if (r.isFailure) {
-        Log.e("createFolder", result: r);
-        return fail(r);
-      }
+    final result =
+        await folderUsecases.createFolder(parent, folderName, folderConfig);
 
-      Log.d("Created New Folder: " + newFolderPath);
-      parent.addFolder(newFolder);
+    if (result.isFailure) return fail(result);
 
-      var result = await _gitRepo.addFolder(newFolder);
-      if (result.isFailure) {
-        Log.e("createFolder", result: result);
-        return fail(result);
-      }
-
-      numChanges += 1;
-      notifyListeners();
-      return Result(null);
-    });
-    if (r.isFailure) return fail(r);
+    // result is success
+    numChanges += 1;
+    notifyListeners();
 
     unawaited(_syncNotes());
-    return Result(null);
+    return result;
   }
 
   Future<void> removeFolder(NotesFolderFS folder) async {

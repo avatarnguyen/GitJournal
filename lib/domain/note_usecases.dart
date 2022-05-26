@@ -18,9 +18,15 @@ import 'package:universal_io/io.dart' as io;
 class NoteUsecases {
   final GitNoteRepository gitRepo;
 
-  NoteUsecases(this.gitRepo);
+  NoteUsecases(
+    this.gitRepo, {
+    Lock? gitOpLock,
+  }) {
+    _gitOpLock = gitOpLock ?? Lock();
+  }
 
-  final _gitOpLock = Lock();
+  late final Lock _gitOpLock;
+
   final _loadLock = Lock();
   final _networkLock = Lock();
 
