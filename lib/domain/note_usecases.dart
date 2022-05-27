@@ -16,16 +16,20 @@ import 'package:synchronized/synchronized.dart';
 import 'package:universal_io/io.dart' as io;
 
 class NoteUsecases {
-  final GitNoteRepository gitRepo;
+  final String repoPath;
+  final GitConfig gitConfig;
 
-  NoteUsecases(
-    this.gitRepo, {
+  NoteUsecases({
+    required this.repoPath,
+    required this.gitConfig,
     Lock? gitOpLock,
   }) {
     _gitOpLock = gitOpLock ?? Lock();
+    _gitRepo = GitNoteRepository(gitRepoPath: repoPath, config: gitConfig);
   }
 
   late final Lock _gitOpLock;
+  late final GitNoteRepository _gitRepo;
 
   final _loadLock = Lock();
   final _networkLock = Lock();
@@ -72,7 +76,7 @@ class NoteUsecases {
       return await _gitOpLock.synchronized(() async {
         Log.d("Got addNote lock");
 
-        var result = await gitRepo.addNote(note);
+        var result = await _gitRepo.addNote(note);
         if (result.isFailure) {
           Log.e("addNote", result: result);
           return false;
@@ -123,7 +127,7 @@ class NoteUsecases {
       return await _gitOpLock.synchronized(() async {
         Log.d("Got updateNote lock");
 
-        var result = await gitRepo.updateNote(note);
+        var result = await _gitRepo.updateNote(note);
         if (result.isFailure) {
           Log.e("addNote", result: result);
           return false;
@@ -151,7 +155,7 @@ class NoteUsecases {
       return await _gitOpLock.synchronized(() async {
         Log.d("Got removeNote lock");
 
-        var result = await gitRepo.removeNotes(notes);
+        var result = await _gitRepo.removeNotes(notes);
         if (result.isFailure) {
           Log.e("remove Note failed", result: result);
           throw ServerException();
@@ -180,7 +184,7 @@ class NoteUsecases {
       return await _gitOpLock.synchronized(() async {
         Log.d("Got undo remove note lock");
 
-        var result = await gitRepo.resetLastCommit();
+        var result = await _gitRepo.resetLastCommit();
         if (result.isFailure) {
           Log.e("undoRemoveNote", result: result);
           throw ServerException();
@@ -233,7 +237,7 @@ class NoteUsecases {
           newNotes.add(newNote);
         }
 
-        final result = await gitRepo.moveNotes(oldPaths, newPaths);
+        final result = await _gitRepo.moveNotes(oldPaths, newPaths);
         if (result.isFailure) {
           Log.e("moveNotes", result: result);
           throw ServerException();
@@ -285,7 +289,7 @@ class NoteUsecases {
   ) async {
     try {
       await _gitOpLock.synchronized(() async {
-        final result = await gitRepo.renameNote(
+        final result = await _gitRepo.renameNote(
           oldPaths,
           newPaths,
         );
@@ -321,7 +325,7 @@ class NoteUsecases {
         }
         // await _notesCache.buildCache(rootFolder);
 
-        final changes = await gitRepo.numChanges();
+        final changes = await _gitRepo.numChanges();
         return Result(changes);
       });
     } on Exception catch (error) {
@@ -399,13 +403,13 @@ class NoteUsecases {
 //**************** Git ****************
   Future<void> gitPush() async {
     await _networkLock.synchronized(() async {
-      await gitRepo.push().throwOnError();
+      await _gitRepo.push().throwOnError();
     });
   }
 
   Future<void> gitMerge() async {
     await _gitOpLock.synchronized(() async {
-      var r = await gitRepo.merge();
+      var r = await _gitRepo.merge();
       if (r.isFailure) {
         var ex = r.error!;
         // When there is nothing to merge into
@@ -419,7 +423,7 @@ class NoteUsecases {
 
   Future<void> gitFetch() async {
     await _networkLock.synchronized(() async {
-      await gitRepo.fetch().throwOnError();
+      await _gitRepo.fetch().throwOnError();
     });
   }
 

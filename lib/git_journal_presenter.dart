@@ -233,15 +233,21 @@ class GitJournalPresenter with ChangeNotifier {
     required bool syncOnBoot,
   }) {
     //TODO: this should be through DI
-    final _gitRepo =
-        GitNoteRepository(gitRepoPath: repoPath, config: gitConfig);
     gitJournalRepo = GitJournalRepoImpl(repoPath);
 
     final _gitOpLock = Lock();
     // Init NoteUsecases instance
-    noteUsecases = NoteUsecases(_gitRepo, gitOpLock: _gitOpLock);
+    noteUsecases = NoteUsecases(
+      repoPath: repoPath,
+      gitConfig: gitConfig,
+      gitOpLock: _gitOpLock,
+    );
     // Init Folder Usecases instance
-    folderUsecases = FolderUsecases(_gitRepo, gitOpLock: _gitOpLock);
+    folderUsecases = FolderUsecases(
+      repoPath: repoPath,
+      gitConfig: gitConfig,
+      gitOpLock: _gitOpLock,
+    );
 
     rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
     _currentBranch = currentBranch;
@@ -258,7 +264,7 @@ class GitJournalPresenter with ChangeNotifier {
 
     _notesCache = NotesCache(
       folderPath: cacheDir,
-      repoPath: _gitRepo.gitRepoPath,
+      repoPath: repoPath,
       fileStorage: fileStorage,
     );
 

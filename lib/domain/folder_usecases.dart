@@ -3,21 +3,26 @@ import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/logger/logger.dart';
+import 'package:gitjournal/settings/git_config.dart';
 import 'package:path/path.dart' as path;
 import 'package:synchronized/synchronized.dart';
 import 'package:universal_io/io.dart' as io;
 
 class FolderUsecases {
-  final GitNoteRepository gitRepo;
+  final String repoPath;
+  final GitConfig gitConfig;
 
-  FolderUsecases(
-    this.gitRepo, {
+  FolderUsecases({
+    required this.repoPath,
+    required this.gitConfig,
     Lock? gitOpLock,
   }) {
     _gitOpLock = gitOpLock ?? Lock();
+    _gitRepo = GitNoteRepository(gitRepoPath: repoPath, config: gitConfig);
   }
 
   late final Lock _gitOpLock;
+  late final GitNoteRepository _gitRepo;
 
   //**************** Create Folder ****************
   Future<Result<void>> createFolder(
@@ -32,7 +37,7 @@ class FolderUsecases {
         return _storageResult;
       }
 
-      final gitResult = await gitRepo.addFolder(_storageResult.getOrThrow());
+      final gitResult = await _gitRepo.addFolder(_storageResult.getOrThrow());
       if (gitResult.isFailure) {
         Log.e("createFolder", result: gitResult);
         return fail(gitResult);
@@ -70,7 +75,7 @@ class FolderUsecases {
 
   Future<Result<void>> _gitRenameFolder(
       String oldFolderPath, NotesFolderFS folder) async {
-    return await gitRepo.renameFolder(
+    return await _gitRepo.renameFolder(
       oldFolderPath,
       folder.folderPath,
     );
@@ -89,7 +94,7 @@ class FolderUsecases {
   }
 
   Future<Result<void>> _gitRemoveFolder(NotesFolderFS folder) async {
-    final result = await gitRepo.removeFolder(folder);
+    final result = await _gitRepo.removeFolder(folder);
     return result;
   }
 
