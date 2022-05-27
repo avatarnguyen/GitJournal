@@ -1,7 +1,6 @@
 import 'package:dart_git/config.dart';
 import 'package:dart_git/dart_git.dart';
 import 'package:gitjournal/core/note.dart';
-import 'package:gitjournal/settings/settings.dart';
 
 abstract class GitJournalRepo {
   Future<Result<void>> init(String repoPath);
@@ -10,7 +9,7 @@ abstract class GitJournalRepo {
   Future<Result<void>> resetHard();
   Future<String> createBranchIfRequired(GitAsyncRepository repo, String name);
   Future<String> checkoutBranch(String branchName);
-  Future<List<String>> branches();
+  Future<List<String>> branches(String repoPath);
   Future<List<GitRemoteConfig>> remoteConfigs();
   Future<void> discardChanges(Note note);
   Future<void> moveRepoToPath();
@@ -19,9 +18,17 @@ abstract class GitJournalRepo {
 
 class GitJournalRepoImpl implements GitJournalRepo {
   @override
-  Future<List<String>> branches() {
-    // TODO: implement branches
-    throw UnimplementedError();
+  Future<List<String>> branches(String repoPath) async {
+    var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
+    var branches = Set<String>.from(await repo.branches().getOrThrow());
+    if (repo.config.remotes.isNotEmpty) {
+      var remoteName = repo.config.remotes.first.name;
+      var remoteBranches = await repo.remoteBranches(remoteName).getOrThrow();
+      branches.addAll(remoteBranches.map((e) {
+        return e.name.branchName()!;
+      }));
+    }
+    return branches.toList()..sort();
   }
 
   @override
@@ -55,8 +62,9 @@ class GitJournalRepoImpl implements GitJournalRepo {
   }
 
   @override
-  Future<Result<void>> init(String repoPath) async {
-    return GitRepository.init(repoPath, defaultBranch: DEFAULT_BRANCH);
+  Future<Result<void>> init(String repoPath) {
+    // TODO: implement init
+    throw UnimplementedError();
   }
 
   @override

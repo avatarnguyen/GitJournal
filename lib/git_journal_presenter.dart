@@ -651,16 +651,7 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<List<String>> branches() async {
-    var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
-    var branches = Set<String>.from(await repo.branches().getOrThrow());
-    if (repo.config.remotes.isNotEmpty) {
-      var remoteName = repo.config.remotes.first.name;
-      var remoteBranches = await repo.remoteBranches(remoteName).getOrThrow();
-      branches.addAll(remoteBranches.map((e) {
-        return e.name.branchName()!;
-      }));
-    }
-    return branches.toList()..sort();
+    return gitJournalRepo.branches(repoPath);
   }
 
   String? get currentBranch => _currentBranch;
