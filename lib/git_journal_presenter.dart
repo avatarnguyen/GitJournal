@@ -301,8 +301,7 @@ class GitJournalPresenter with ChangeNotifier {
     await _fillFileStorageCache();
 
     // FIXME: We should report the notes that failed to load
-    final result =
-        await noteUsecases.loadGitNotes(rootFolder, gitConfig, repoPath);
+    final result = await noteUsecases.loadGitNotes(rootFolder, repoPath);
     if (result.isFailure) {
       await _resetFileStorage();
     } else {
@@ -351,7 +350,7 @@ class GitJournalPresenter with ChangeNotifier {
   Future<void> syncNotes({bool doNotThrow = false}) async {
     // This is extremely slow with dart-git, can take over a second!
     if (_shouldCheckForChanges()) {
-      final result = await noteUsecases.gitLoadAsync(repoPath, gitConfig);
+      final result = await noteUsecases.gitLoadAsync(repoPath);
       if (result.isFailure) return;
     }
 
@@ -546,7 +545,7 @@ class GitJournalPresenter with ChangeNotifier {
 
     // FIXME: Is there a way of figuring this amount dynamically?
     // The '4 seconds' is taken from snack_bar.dart -> _kSnackBarDisplayDuration
-    // We wait an aritfical amount of time, so that the user has a chance to undo
+    // We wait an artificial amount of time, so that the user has a chance to undo
     // their delete operation, and that commit is not synced with the server, till then.
     var _ = await Future.delayed(4.seconds);
 
@@ -595,7 +594,6 @@ class GitJournalPresenter with ChangeNotifier {
     var newRepoPath = path.join(gitBaseDirectory, repoFolderName);
     await noteUsecases.ensureOneCommitInRepo(
       repoPath: newRepoPath,
-      config: gitConfig,
     );
 
     if (newRepoPath != repoPath) {
@@ -617,14 +615,14 @@ class GitJournalPresenter with ChangeNotifier {
     notifyListeners();
   }
 
-  // *************** Git Methods ********************************
-
   Future<void> _persistConfig() async {
     await storageConfig.save();
     await folderConfig.save();
     await gitConfig.save();
     await settings.save();
   }
+
+  // *************** Git Methods ********************************
 
   Future<void> moveRepoToPath() async {
     var newRepoPath = await storageConfig.buildRepoPath(gitBaseDirectory);

@@ -307,7 +307,6 @@ class NoteUsecases {
 //**************** Load Notes ****************
   Future<Result<int?>> loadGitNotes(
     NotesFolderFS rootFolder,
-    GitConfig gitConfig,
     String repoPath,
   ) async {
     try {
@@ -374,7 +373,6 @@ class NoteUsecases {
   /// one commit. It makes doing a git pull and push easier
   Future<void> ensureOneCommitInRepo({
     required String repoPath,
-    required GitConfig config,
   }) async {
     try {
       var dirList = await io.Directory(repoPath).list().toList();
@@ -391,8 +389,8 @@ class NoteUsecases {
 
         await repo.commit(
           message: "Add gitignore file",
-          authorEmail: config.gitAuthorEmail,
-          authorName: config.gitAuthor,
+          authorEmail: gitConfig.gitAuthorEmail,
+          authorName: gitConfig.gitAuthor,
         );
       }
     } catch (ex, st) {
@@ -427,14 +425,14 @@ class NoteUsecases {
     });
   }
 
-  Future<Result> gitLoadAsync(String repoPath, GitConfig config) async {
+  Future<Result> gitLoadAsync(String repoPath) async {
     final repoR = await GitAsyncRepository.load(repoPath);
     if (repoR.isFailure) {
       Log.e("SyncNotes Failed to Load Repo", result: repoR);
       return repoR;
     }
     final repo = repoR.getOrThrow();
-    await _commitUnTracked(repo, config).throwOnError();
+    await _commitUnTracked(repo, gitConfig).throwOnError();
     return Result(repo);
   }
 }
