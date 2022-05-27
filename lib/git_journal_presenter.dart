@@ -6,7 +6,6 @@
 
 import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:dart_git/config.dart';
 import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/plumbing/git_hash.dart';
@@ -31,7 +30,7 @@ import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/settings_migrations.dart';
 import 'package:gitjournal/settings/storage_config.dart';
 import 'package:gitjournal/sync_attempt.dart';
-import 'package:path/path.dart' as p;
+import 'package:path/path.dart' as path;
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:synchronized/synchronized.dart';
@@ -49,7 +48,7 @@ class GitJournalPresenter with ChangeNotifier {
   final FileStorage fileStorage;
   final FileStorageCache fileStorageCache;
 
-  final _gitOpLock = Lock();
+  // final _gitOpLock = Lock();
   // final _loadLock = Lock();
   // final _networkLock = Lock();
   final _cacheBuildingLock = Lock();
@@ -61,7 +60,7 @@ class GitJournalPresenter with ChangeNotifier {
 
   final String repoPath;
 
-  late final GitNoteRepository _gitRepo;
+  // late final GitNoteRepository _gitRepo;
   late final NotesCache _notesCache;
   late final NotesFolderFS rootFolder;
 
@@ -233,16 +232,19 @@ class GitJournalPresenter with ChangeNotifier {
     required bool loadFromCache,
     required bool syncOnBoot,
   }) {
-    _gitRepo = GitNoteRepository(gitRepoPath: repoPath, config: gitConfig);
-    rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
-    _currentBranch = currentBranch;
+    //TODO: this should be through DI
+    final _gitRepo =
+        GitNoteRepository(gitRepoPath: repoPath, config: gitConfig);
+    gitJournalRepo = GitJournalRepoImpl(repoPath);
 
+    final _gitOpLock = Lock();
     // Init NoteUsecases instance
     noteUsecases = NoteUsecases(_gitRepo, gitOpLock: _gitOpLock);
     // Init Folder Usecases instance
     folderUsecases = FolderUsecases(_gitRepo, gitOpLock: _gitOpLock);
-    //TODO: this should be through DI
-    gitJournalRepo = GitJournalRepoImpl();
+
+    rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
+    _currentBranch = currentBranch;
 
     Log.i("Branch $_currentBranch");
 
@@ -300,7 +302,7 @@ class GitJournalPresenter with ChangeNotifier {
     } else {
       await _notesCache.buildCache(rootFolder);
 
-      var changes = await _gitRepo.numChanges();
+      final changes = result.getOrThrow();
       numChanges = changes ?? 0;
       notifyListeners();
     }
@@ -435,7 +437,7 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<void> renameFolder(NotesFolderFS folder, String newFolderName) async {
-    assert(!newFolderName.contains(p.separator));
+    assert(!newFolderName.contains(path.separator));
 
     logEvent(Event.FolderRenamed);
 
@@ -452,7 +454,7 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<Result<Note>> renameNote(Note fromNote, String newFileName) async {
-    assert(!newFileName.contains(p.separator));
+    assert(!newFileName.contains(path.separator));
     assert(fromNote.oid.isNotEmpty);
 
     logEvent(Event.NoteRenamed);
@@ -578,15 +580,13 @@ class GitJournalPresenter with ChangeNotifier {
     return folderUsecases.fileExists(path);
   }
 
-  // *************** Git Methods ********************************
-
   Future<void> completeGitHostSetup(
       String repoFolderName, String remoteName) async {
     storageConfig.folderName = repoFolderName;
     storageConfig.save();
     await _persistConfig();
 
-    var newRepoPath = p.join(gitBaseDirectory, repoFolderName);
+    var newRepoPath = path.join(gitBaseDirectory, repoFolderName);
     await noteUsecases.ensureOneCommitInRepo(
       repoPath: newRepoPath,
       config: gitConfig,
@@ -610,6 +610,8 @@ class GitJournalPresenter with ChangeNotifier {
 
     notifyListeners();
   }
+
+  // *************** Git Methods ********************************
 
   Future<void> _persistConfig() async {
     await storageConfig.save();
@@ -636,8 +638,7 @@ class GitJournalPresenter with ChangeNotifier {
 
   Future<void> discardChanges(Note note) async {
     // FIXME: Add the checkout method to GJRepo
-    var gitRepo = await GitAsyncRepository.load(repoPath).getOrThrow();
-    await gitRepo.checkout(note.filePath).throwOnError();
+    await gitJournalRepo.discardChanges(note.filePath);
 
     // FIXME: Instead of this just reload that specific file
     // FIXME: I don't think this will work!
@@ -645,24 +646,22 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<List<GitRemoteConfig>> remoteConfigs() async {
-    var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
-    var config = repo.config.remotes;
-    return config;
+    return gitJournalRepo.remoteConfigs();
   }
 
   Future<List<String>> branches() async {
-    return gitJournalRepo.branches(repoPath);
+    return gitJournalRepo.branches();
   }
 
   String? get currentBranch => _currentBranch;
 
   Future<String> checkoutBranch(String branchName) async {
     Log.i("Changing branch to $branchName");
-    var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
 
     try {
-      var created = await createBranchIfRequired(repo, branchName);
-      if (created.isEmpty) {
+      final branch = await gitJournalRepo.checkoutBranch(branchName);
+
+      if (branch.isEmpty) {
         return "";
       }
     } catch (ex, st) {
@@ -670,7 +669,6 @@ class GitJournalPresenter with ChangeNotifier {
     }
 
     try {
-      await repo.checkoutBranch(branchName).throwOnError();
       _currentBranch = branchName;
       Log.i("Done checking out $branchName");
 
@@ -689,29 +687,7 @@ class GitJournalPresenter with ChangeNotifier {
   /// throws exceptions
   Future<String> createBranchIfRequired(
       GitAsyncRepository repo, String name) async {
-    var localBranches = await repo.branches().getOrThrow();
-    if (localBranches.contains(name)) {
-      return name;
-    }
-
-    if (repo.config.remotes.isEmpty) {
-      return "";
-    }
-    var remoteConfig = repo.config.remotes.first;
-    var remoteBranches =
-        await repo.remoteBranches(remoteConfig.name).getOrThrow();
-    var remoteBranchRef = remoteBranches.firstWhereOrNull(
-      (ref) => ref.name.branchName() == name,
-    );
-    if (remoteBranchRef == null) {
-      return "";
-    }
-
-    await repo.createBranch(name, hash: remoteBranchRef.hash).throwOnError();
-    await repo.setBranchUpstreamTo(name, remoteConfig, name).throwOnError();
-
-    Log.i("Created branch $name");
-    return name;
+    return gitJournalRepo.createBranchIfRequired(repo, name);
   }
 
   Future<void> delete() async {
@@ -722,74 +698,31 @@ class GitJournalPresenter with ChangeNotifier {
   /// reset --hard the current branch to its remote branch
   Future<Result<void>> resetHard() {
     return catchAll(() async {
-      var repo =
-          await GitAsyncRepository.load(_gitRepo.gitRepoPath).getOrThrow();
-      var branchName = await repo.currentBranch().getOrThrow();
-      var branchConfig = repo.config.branch(branchName);
-      if (branchConfig == null) {
-        throw Exception("Branch config for '$branchName' not found");
+      try {
+        final result = gitJournalRepo.resetHard();
+        numChanges = 0;
+        notifyListeners();
+
+        _loadNotes();
+
+        return result;
+      } on Exception catch (error) {
+        Log.e(error.toString());
+        return Result.fail(error);
       }
-
-      var remoteName = branchConfig.remote;
-      if (remoteName == null) {
-        throw Exception("Branch config for '$branchName' misdsing remote");
-      }
-      var remoteBranch =
-          await repo.remoteBranch(remoteName, branchName).getOrThrow();
-      await repo.resetHard(remoteBranch.hash!).throwOnError();
-
-      numChanges = 0;
-      notifyListeners();
-
-      _loadNotes();
-
-      return Result(null);
     });
   }
 
   Future<Result<bool>> canResetHard() {
-    return catchAll(() async {
-      var repo =
-          await GitAsyncRepository.load(_gitRepo.gitRepoPath).getOrThrow();
-      var branchName = await repo.currentBranch().getOrThrow();
-      var branchConfig = repo.config.branch(branchName);
-      if (branchConfig == null) {
-        throw Exception("Branch config for '$branchName' not found");
-      }
-
-      var remoteName = branchConfig.remote;
-      if (remoteName == null) {
-        throw Exception("Branch config for '$branchName' misdsing remote");
-      }
-      var remoteBranch =
-          await repo.remoteBranch(remoteName, branchName).getOrThrow();
-      var headHash = await repo.headHash().getOrThrow();
-      return Result(remoteBranch.hash != headHash);
-    });
+    return gitJournalRepo.canResetHard();
   }
 
   Future<Result<void>> removeRemote(String remoteName) async {
-    var repo = GitRepository.load(repoPath).getOrThrow();
-    if (repo.config.remote(remoteName) != null) {
-      var r = repo.removeRemote(remoteName);
-      var _ = repo.close();
-      if (r.isFailure) {
-        return fail(r);
-      }
-    }
-
-    return Result(null);
+    return gitJournalRepo.removeRemote(remoteName);
   }
 
   Future<Result<void>> ensureValidRepo() async {
-    if (!GitRepository.isValidRepo(repoPath)) {
-      var r = GitRepository.init(repoPath, defaultBranch: DEFAULT_BRANCH);
-      if (r.isFailure) {
-        return fail(r);
-      }
-    }
-
-    return Result(null);
+    return gitJournalRepo.ensureValidRepo();
   }
 
   Future<Result<void>> init(String repoPath) async {
@@ -802,12 +735,12 @@ Future<void> _copyDirectory(String source, String destination) async {
   await for (var entity in io.Directory(source).list(recursive: false)) {
     dynamic _;
     if (entity is io.Directory) {
-      var newDirectory = io.Directory(p.join(
-          io.Directory(destination).absolute.path, p.basename(entity.path)));
+      var newDirectory = io.Directory(path.join(
+          io.Directory(destination).absolute.path, path.basename(entity.path)));
       _ = await newDirectory.create();
       await _copyDirectory(entity.absolute.path, newDirectory.path);
     } else if (entity is io.File) {
-      _ = await entity.copy(p.join(destination, p.basename(entity.path)));
+      _ = await entity.copy(path.join(destination, path.basename(entity.path)));
     }
   }
 }
