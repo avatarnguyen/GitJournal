@@ -61,8 +61,8 @@ class GitJournalPresenter with ChangeNotifier {
   final String repoPath;
 
   // late final GitNoteRepository _gitRepo;
-  late final NotesCache _notesCache;
-  late final NotesFolderFS rootFolder;
+  // late final NotesCache _notesCache;
+  // late final NotesFolderFS rootFolder;
 
   late final NoteUsecases noteUsecases;
   late final FolderUsecases folderUsecases;
@@ -236,8 +236,18 @@ class GitJournalPresenter with ChangeNotifier {
     gitJournalRepo = GitJournalRepoImpl(repoPath);
 
     final _gitOpLock = Lock();
+
+    final rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
+    final _notesCache = NotesCache(
+      folderPath: cacheDir,
+      repoPath: repoPath,
+      fileStorage: fileStorage,
+    );
+
     // Init NoteUsecases instance
     noteUsecases = NoteUsecases(
+      notesCache: _notesCache,
+      rootFolder: rootFolder,
       repoPath: repoPath,
       gitConfig: gitConfig,
       gitOpLock: _gitOpLock,
@@ -249,7 +259,6 @@ class GitJournalPresenter with ChangeNotifier {
       gitOpLock: _gitOpLock,
     );
 
-    rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
     _currentBranch = currentBranch;
 
     Log.i("Branch $_currentBranch");
@@ -262,12 +271,6 @@ class GitJournalPresenter with ChangeNotifier {
 
     Log.i("Cache Directory: $cacheDir");
 
-    _notesCache = NotesCache(
-      folderPath: cacheDir,
-      repoPath: repoPath,
-      fileStorage: fileStorage,
-    );
-
     fileStorageCacheReady = headHash == fileStorageCache.lastProcessedHead;
 
     if (loadFromCache) _loadFromCache();
@@ -276,7 +279,7 @@ class GitJournalPresenter with ChangeNotifier {
 
   Future<void> _loadFromCache() async {
     var startTime = DateTime.now();
-    await _notesCache.load(rootFolder);
+    await noteUsecases.loadNotesFromCache();
     var endTime = DateTime.now().difference(startTime);
 
     Log.i("Finished loading the notes cache - $endTime");
@@ -301,11 +304,11 @@ class GitJournalPresenter with ChangeNotifier {
     await _fillFileStorageCache();
 
     // FIXME: We should report the notes that failed to load
-    final result = await noteUsecases.loadGitNotes(rootFolder, repoPath);
+    final result = await noteUsecases.loadGitNotes(repoPath);
     if (result.isFailure) {
       await _resetFileStorage();
     } else {
-      await _notesCache.buildCache(rootFolder);
+      await noteUsecases.cacheNotesFromRoot();
 
       final changes = result.getOrThrow();
       numChanges = changes ?? 0;
@@ -676,7 +679,7 @@ class GitJournalPresenter with ChangeNotifier {
       _currentBranch = branchName;
       Log.i("Done checking out $branchName");
 
-      await _notesCache.clear();
+      await noteUsecases.clearNoteCache();
       notifyListeners();
 
       _loadNotes();
@@ -735,6 +738,8 @@ class GitJournalPresenter with ChangeNotifier {
 }
 
 // *********** End class ************
+
+// FIXME: single private global method, should be removed
 Future<void> _copyDirectory(String source, String destination) async {
   await for (var entity in io.Directory(source).list(recursive: false)) {
     dynamic _;

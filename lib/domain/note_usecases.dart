@@ -8,6 +8,7 @@ import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
+import 'package:gitjournal/core/notes_cache.dart';
 import 'package:gitjournal/domain/exception.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/settings/git_config.dart';
@@ -18,8 +19,12 @@ import 'package:universal_io/io.dart' as io;
 class NoteUsecases {
   final String repoPath;
   final GitConfig gitConfig;
+  final NotesCache notesCache;
+  final NotesFolderFS rootFolder;
 
   NoteUsecases({
+    required this.notesCache,
+    required this.rootFolder,
     required this.repoPath,
     required this.gitConfig,
     Lock? gitOpLock,
@@ -33,6 +38,18 @@ class NoteUsecases {
 
   final _loadLock = Lock();
   final _networkLock = Lock();
+
+  Future<void> loadNotesFromCache() async {
+    return await notesCache.load(rootFolder);
+  }
+
+  Future<void> cacheNotesFromRoot() async {
+    return await notesCache.buildCache(rootFolder);
+  }
+
+  Future<void> clearNoteCache() async {
+    await notesCache.clear();
+  }
 
   //**************** Add Note ****************
   Future<Result<Note>> addNote(Note note) async {
@@ -305,10 +322,7 @@ class NoteUsecases {
   }
 
 //**************** Load Notes ****************
-  Future<Result<int?>> loadGitNotes(
-    NotesFolderFS rootFolder,
-    String repoPath,
-  ) async {
+  Future<Result<int?>> loadGitNotes(String repoPath) async {
     try {
       return _loadLock.synchronized(() async {
         var r = await rootFolder.loadRecursively();
