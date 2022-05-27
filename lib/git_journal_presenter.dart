@@ -21,6 +21,7 @@ import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/notes_cache.dart';
 import 'package:gitjournal/domain/folder_usecases.dart';
+import 'package:gitjournal/domain/git_journal_repo.dart';
 import 'package:gitjournal/domain/note_usecases.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/logger/logger.dart';
@@ -66,6 +67,8 @@ class GitJournalPresenter with ChangeNotifier {
 
   late final NoteUsecases noteUsecases;
   late final FolderUsecases folderUsecases;
+
+  late final GitJournalRepo gitJournalRepo;
 
   //
   // Mutable stuff
@@ -238,6 +241,8 @@ class GitJournalPresenter with ChangeNotifier {
     noteUsecases = NoteUsecases(_gitRepo, gitOpLock: _gitOpLock);
     // Init Folder Usecases instance
     folderUsecases = FolderUsecases(_gitRepo, gitOpLock: _gitOpLock);
+    //TODO: this should be through DI
+    gitJournalRepo = GitJournalRepoImpl();
 
     Log.i("Branch $_currentBranch");
 
@@ -797,7 +802,7 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<Result<void>> init(String repoPath) async {
-    return GitRepository.init(repoPath, defaultBranch: DEFAULT_BRANCH);
+    return gitJournalRepo.init(repoPath);
   }
 }
 

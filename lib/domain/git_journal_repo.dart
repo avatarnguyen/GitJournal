@@ -1,6 +1,7 @@
 import 'package:dart_git/config.dart';
 import 'package:dart_git/dart_git.dart';
 import 'package:gitjournal/core/note.dart';
+import 'package:gitjournal/settings/settings.dart';
 
 abstract class GitJournalRepo {
   Future<Result<void>> init(String repoPath);
@@ -54,9 +55,8 @@ class GitJournalRepoImpl implements GitJournalRepo {
   }
 
   @override
-  Future<Result<void>> init(String repoPath) {
-    // TODO: implement init
-    throw UnimplementedError();
+  Future<Result<void>> init(String repoPath) async {
+    return GitRepository.init(repoPath, defaultBranch: DEFAULT_BRANCH);
   }
 
   @override
