@@ -40,10 +40,10 @@ import 'package:universal_io/io.dart' as io;
 
 class GitJournalPresenter with ChangeNotifier {
   final RepositoryManager repoManager;
-  final StorageConfig storageConfig;
+  // final StorageConfig storageConfig;
+  final Settings settings;
   // final GitConfig gitConfig;
   // final NotesFolderConfig folderConfig;
-  final Settings settings;
 
   // final FileStorage fileStorage;
   // final FileStorageCache fileStorageCache;
@@ -222,7 +222,10 @@ class GitJournalPresenter with ChangeNotifier {
     );
 
     final _storageRepo = StorageRepoImpl(
-        fileStorage: fileStorage, fileStorageCache: fileStorageCache);
+      fileStorage: fileStorage,
+      fileStorageCache: fileStorageCache,
+      storageConfig: storageConfig,
+    );
 
     var gjRepo = GitJournalPresenter._internal(
       repoManager: repoManager,
@@ -230,7 +233,7 @@ class GitJournalPresenter with ChangeNotifier {
       gitBaseDirectory: gitBaseDir,
       cacheDir: cacheDir,
       remoteGitRepoConfigured: remoteConfigured,
-      storageConfig: storageConfig,
+      // storageConfig: storageConfig,
       settings: settings,
       // gitConfig: gitConfig,
       id: id,
@@ -255,7 +258,7 @@ class GitJournalPresenter with ChangeNotifier {
     required this.repoManager,
     required this.gitBaseDirectory,
     required this.cacheDir,
-    required this.storageConfig,
+    // required this.storageConfig,
     // required this.folderConfig,
     required this.settings,
     // required this.gitConfig,
@@ -342,10 +345,10 @@ class GitJournalPresenter with ChangeNotifier {
 
   bool _shouldCheckForChanges() {
     if (Platform.isAndroid || Platform.isIOS) {
-      return !storageConfig.storeInternally;
+      return !storageRepo.isStoreInternally;
     }
     // Overwriting this for now, as I want the tests to pass
-    return !storageConfig.storeInternally;
+    return !storageRepo.isStoreInternally;
   }
 
   Future<void> syncNotes({bool doNotThrow = false}) async {
@@ -587,8 +590,8 @@ class GitJournalPresenter with ChangeNotifier {
 
   Future<void> completeGitHostSetup(
       String repoFolderName, String remoteName) async {
-    storageConfig.folderName = repoFolderName;
-    storageConfig.save();
+    storageRepo.changeFolderName(repoFolderName);
+    storageRepo.saveConfig();
     await _persistConfig();
 
     var newRepoPath = path.join(gitBaseDirectory, repoFolderName);
@@ -616,7 +619,7 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<void> _persistConfig() async {
-    await storageConfig.save();
+    await storageRepo.saveConfig();
     await folderUsecases.saveFolderConfig();
     await folderUsecases.saveGitConfig();
     await settings.save();
@@ -625,7 +628,7 @@ class GitJournalPresenter with ChangeNotifier {
   // *************** Git Methods ********************************
 
   Future<void> moveRepoToPath() async {
-    var newRepoPath = await storageConfig.buildRepoPath(gitBaseDirectory);
+    var newRepoPath = await storageRepo.buildRepoPath(gitBaseDirectory);
 
     if (newRepoPath != repoPath) {
       Log.i("Old Path: $repoPath");
