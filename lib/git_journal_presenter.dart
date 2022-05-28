@@ -41,8 +41,8 @@ import 'package:universal_io/io.dart' as io;
 class GitJournalPresenter with ChangeNotifier {
   final RepositoryManager repoManager;
   final StorageConfig storageConfig;
-  final GitConfig gitConfig;
-  final NotesFolderConfig folderConfig;
+  // final GitConfig gitConfig;
+  // final NotesFolderConfig folderConfig;
   final Settings settings;
 
   final FileStorage fileStorage;
@@ -64,10 +64,10 @@ class GitJournalPresenter with ChangeNotifier {
   // late final NotesCache _notesCache;
   // late final NotesFolderFS rootFolder;
 
-  late final NoteUsecases noteUsecases;
-  late final FolderUsecases folderUsecases;
+  final NoteUsecases noteUsecases;
+  final FolderUsecases folderUsecases;
 
-  late final GitJournalRepo gitJournalRepo;
+  final GitJournalRepo gitJournalRepo;
 
   //
   // Mutable stuff
@@ -192,6 +192,34 @@ class GitJournalPresenter with ChangeNotifier {
     var headR = await repo.headHash();
     var head = headR.isFailure ? GitHash.zero() : headR.getOrThrow();
 
+    //TODO: this should be through DI
+    final _gitJournalRepo = GitJournalRepoImpl(repoPath);
+
+    final _gitOpLock = Lock();
+
+    final rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
+    final _notesCache = NotesCache(
+      folderPath: cacheDir,
+      repoPath: repoPath,
+      fileStorage: fileStorage,
+    );
+
+    // Init NoteUsecases instance
+    final _noteUsecases = NoteUsecases(
+      notesCache: _notesCache,
+      rootFolder: rootFolder,
+      repoPath: repoPath,
+      gitConfig: gitConfig,
+      gitOpLock: _gitOpLock,
+    );
+    // Init Folder Usecases instance
+    final _folderUsecases = FolderUsecases(
+      repoPath: repoPath,
+      gitConfig: gitConfig,
+      gitOpLock: _gitOpLock,
+      folderConfig: folderConfig,
+    );
+
     var gjRepo = GitJournalPresenter._internal(
       repoManager: repoManager,
       repoPath: repoPath,
@@ -200,8 +228,7 @@ class GitJournalPresenter with ChangeNotifier {
       remoteGitRepoConfigured: remoteConfigured,
       storageConfig: storageConfig,
       settings: settings,
-      folderConfig: folderConfig,
-      gitConfig: gitConfig,
+      // gitConfig: gitConfig,
       id: id,
       fileStorage: fileStorage,
       fileStorageCache: fileStorageCache,
@@ -209,6 +236,9 @@ class GitJournalPresenter with ChangeNotifier {
       headHash: head,
       loadFromCache: loadFromCache,
       syncOnBoot: syncOnBoot,
+      noteUsecases: _noteUsecases,
+      folderUsecases: _folderUsecases,
+      gitJournalRepo: _gitJournalRepo,
     );
 
     return Result(gjRepo);
@@ -221,9 +251,9 @@ class GitJournalPresenter with ChangeNotifier {
     required this.gitBaseDirectory,
     required this.cacheDir,
     required this.storageConfig,
-    required this.folderConfig,
+    // required this.folderConfig,
     required this.settings,
-    required this.gitConfig,
+    // required this.gitConfig,
     required this.remoteGitRepoConfigured,
     required this.fileStorage,
     required this.fileStorageCache,
@@ -231,34 +261,10 @@ class GitJournalPresenter with ChangeNotifier {
     required GitHash headHash,
     required bool loadFromCache,
     required bool syncOnBoot,
+    required this.noteUsecases,
+    required this.folderUsecases,
+    required this.gitJournalRepo,
   }) {
-    //TODO: this should be through DI
-    gitJournalRepo = GitJournalRepoImpl(repoPath);
-
-    final _gitOpLock = Lock();
-
-    final rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
-    final _notesCache = NotesCache(
-      folderPath: cacheDir,
-      repoPath: repoPath,
-      fileStorage: fileStorage,
-    );
-
-    // Init NoteUsecases instance
-    noteUsecases = NoteUsecases(
-      notesCache: _notesCache,
-      rootFolder: rootFolder,
-      repoPath: repoPath,
-      gitConfig: gitConfig,
-      gitOpLock: _gitOpLock,
-    );
-    // Init Folder Usecases instance
-    folderUsecases = FolderUsecases(
-      repoPath: repoPath,
-      gitConfig: gitConfig,
-      gitOpLock: _gitOpLock,
-    );
-
     _currentBranch = currentBranch;
 
     Log.i("Branch $_currentBranch");
@@ -417,8 +423,7 @@ class GitJournalPresenter with ChangeNotifier {
       NotesFolderFS parent, String folderName) async {
     logEvent(Event.FolderAdded);
 
-    final result =
-        await folderUsecases.createFolder(parent, folderName, folderConfig);
+    final result = await folderUsecases.createFolder(parent, folderName);
 
     if (result.isFailure) return fail(result);
 
@@ -620,8 +625,8 @@ class GitJournalPresenter with ChangeNotifier {
 
   Future<void> _persistConfig() async {
     await storageConfig.save();
-    await folderConfig.save();
-    await gitConfig.save();
+    await folderUsecases.saveFolderConfig();
+    await folderUsecases.saveGitConfig();
     await settings.save();
   }
 

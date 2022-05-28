@@ -11,10 +11,12 @@ import 'package:universal_io/io.dart' as io;
 class FolderUsecases {
   final String repoPath;
   final GitConfig gitConfig;
+  final NotesFolderConfig folderConfig;
 
   FolderUsecases({
     required this.repoPath,
     required this.gitConfig,
+    required this.folderConfig,
     Lock? gitOpLock,
   }) {
     _gitOpLock = gitOpLock ?? Lock();
@@ -24,15 +26,21 @@ class FolderUsecases {
   late final Lock _gitOpLock;
   late final GitNoteRepository _gitRepo;
 
+  Future<void> saveFolderConfig() async {
+    await folderConfig.save();
+  }
+
+  Future<void> saveGitConfig() async {
+    await gitConfig.save();
+  }
+
   //**************** Create Folder ****************
   Future<Result<void>> createFolder(
     NotesFolderFS parent,
     String folderName,
-    NotesFolderConfig folderConfig,
   ) async {
     return await _gitOpLock.synchronized(() async {
-      final _storageResult =
-          _createStorageFolder(parent, folderName, folderConfig);
+      final _storageResult = _createStorageFolder(parent, folderName);
       if (_storageResult.isFailure) {
         return _storageResult;
       }
@@ -48,7 +56,9 @@ class FolderUsecases {
   }
 
   Result<NotesFolderFS> _createStorageFolder(
-      NotesFolderFS parent, String folderName, NotesFolderConfig folderConfig) {
+    NotesFolderFS parent,
+    String folderName,
+  ) {
     var newFolderPath = path.join(parent.folderPath, folderName);
     var newFolder = NotesFolderFS(parent, newFolderPath, folderConfig);
     var r = newFolder.create();
