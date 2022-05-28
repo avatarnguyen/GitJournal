@@ -256,11 +256,8 @@ Future<void> main() async {
   });
 
   group('Move - ', () {
-    setUp(() async {
-      await _setup();
-    });
-
     test('Move - Note from root to Folder', () async {
+      await _setup();
       var note = _rootFolder!.getNoteWithSpec('1.md')!;
       var folder = _rootFolder!.getFolderWithSpec('f1')!;
 
@@ -296,7 +293,7 @@ Future<void> main() async {
     });
   });
 
-  test('Move - To New Folder', () async {
+  test('Move To New Folder', () async {
     await _setup();
     var note = _rootFolder!.getNoteWithSpec('1.md')!;
     var folder = _rootFolder!.getOrBuildFolderWithSpec('f2');
@@ -385,50 +382,46 @@ Future<void> main() async {
     expect(headCommit.parents[0], headHash);
   });
 
-  group('Folder - ', () {
-    setUp(() async {
-      await _setup();
-    });
+  test('Create folder', () async {
+    await _setup();
+    const folderName = 'test_removed';
+    await repo.createFolder(_rootFolder!, folderName);
 
-    test('Create folder', () async {
-      const folderName = 'test_removed';
-      await repo.createFolder(_rootFolder!, folderName);
+    final folder = _rootFolder!.getFolderWithSpec(folderName);
+    expect(folder?.rootFolder, _rootFolder!);
+    expect(folder?.folderName, folderName);
 
-      final folder = _rootFolder!.getFolderWithSpec(folderName);
-      expect(folder?.rootFolder, _rootFolder!);
-      expect(folder?.folderName, folderName);
+    final gitRepo = GitRepository.load(repoPath).getOrThrow();
+    expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
 
-      final gitRepo = GitRepository.load(repoPath).getOrThrow();
-      expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+    var headCommit = gitRepo.headCommit().getOrThrow();
+    expect(headCommit.parents.length, 1);
+    expect(headCommit.parents[0], headHash);
+  });
 
-      var headCommit = gitRepo.headCommit().getOrThrow();
-      expect(headCommit.parents.length, 1);
-      expect(headCommit.parents[0], headHash);
-    });
+  // FIXME: setup cannot be executed 2x
+  test('Remove folder', () async {
+    await _setup();
+    const folderName = 'test_removed';
+    await repo.createFolder(_rootFolder!, folderName);
+    //
+    final folder = _rootFolder!.getFolderWithSpec(folderName);
+    expect(folder?.rootFolder, _rootFolder!);
+    expect(folder?.folderName, folderName);
 
-    test('Remove folder', () async {
-      const folderName = 'test_removed';
-      await repo.createFolder(_rootFolder!, folderName);
-      //
-      final folder = _rootFolder!.getFolderWithSpec(folderName);
-      expect(folder?.rootFolder, _rootFolder!);
-      expect(folder?.folderName, folderName);
+    final removeHeadHash = GitHash('7fc65b59170bdc91013eb56cdc65fa3307f2e7de');
+    await _setup(head: removeHeadHash);
+    await repo.removeFolder(folder!);
 
-      final removeHeadHash =
-          GitHash('7fc65b59170bdc91013eb56cdc65fa3307f2e7de');
-      await _setup(head: removeHeadHash);
-      await repo.removeFolder(folder!);
+    final removedFolder = _rootFolder!.getFolderWithSpec(folderName);
+    expect(removedFolder, isNull);
 
-      final removedFolder = _rootFolder!.getFolderWithSpec(folderName);
-      expect(removedFolder, isNull);
+    final gitRepo = GitRepository.load(repoPath).getOrThrow();
+    expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
 
-      final gitRepo = GitRepository.load(repoPath).getOrThrow();
-      expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
-
-      var headCommit = gitRepo.headCommit().getOrThrow();
-      expect(headCommit.parents.length, 1);
-      expect(headCommit.parents[0], isNot(removeHeadHash));
-    });
+    var headCommit = gitRepo.headCommit().getOrThrow();
+    expect(headCommit.parents.length, 1);
+    expect(headCommit.parents[0], isNot(removeHeadHash));
   });
 }
 

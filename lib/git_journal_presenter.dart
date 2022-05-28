@@ -41,7 +41,7 @@ import 'package:universal_io/io.dart' as io;
 class GitJournalPresenter with ChangeNotifier {
   final RepositoryManager repoManager;
   // final StorageConfig storageConfig;
-  final Settings settings;
+  // final Settings settings;
   // final GitConfig gitConfig;
   // final NotesFolderConfig folderConfig;
 
@@ -225,6 +225,7 @@ class GitJournalPresenter with ChangeNotifier {
       fileStorage: fileStorage,
       fileStorageCache: fileStorageCache,
       storageConfig: storageConfig,
+      settings: settings,
     );
 
     var gjRepo = GitJournalPresenter._internal(
@@ -234,7 +235,7 @@ class GitJournalPresenter with ChangeNotifier {
       cacheDir: cacheDir,
       remoteGitRepoConfigured: remoteConfigured,
       // storageConfig: storageConfig,
-      settings: settings,
+      // settings: settings,
       // gitConfig: gitConfig,
       id: id,
       // fileStorage: fileStorage,
@@ -260,7 +261,7 @@ class GitJournalPresenter with ChangeNotifier {
     required this.cacheDir,
     // required this.storageConfig,
     // required this.folderConfig,
-    required this.settings,
+    // required this.settings,
     // required this.gitConfig,
     required this.remoteGitRepoConfigured,
     // required this.fileStorage,
@@ -406,7 +407,7 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<void> _syncNotes() async {
-    var freq = settings.remoteSyncFrequency;
+    var freq = storageRepo.remoteSyncFrequency;
     if (freq != RemoteSyncFrequency.Automatic) {
       await _loadNotes();
       return;
@@ -591,7 +592,7 @@ class GitJournalPresenter with ChangeNotifier {
   Future<void> completeGitHostSetup(
       String repoFolderName, String remoteName) async {
     storageRepo.changeFolderName(repoFolderName);
-    storageRepo.saveConfig();
+    // storageRepo.saveConfig();
     await _persistConfig();
 
     var newRepoPath = path.join(gitBaseDirectory, repoFolderName);
@@ -619,10 +620,9 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<void> _persistConfig() async {
-    await storageRepo.saveConfig();
+    await storageRepo.saveConfigAndSettings();
     await folderUsecases.saveFolderConfig();
     await folderUsecases.saveGitConfig();
-    await settings.save();
   }
 
   // *************** Git Methods ********************************

@@ -3,27 +3,32 @@ import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/core/file/file_storage_cache.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/logger/logger.dart';
+import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/storage_config.dart';
 
 abstract class StorageRepo {
   Future<void> clearStorageCache();
   Future<void> fillStorageCache();
-  Future<void> saveConfig();
+  Future<void> saveConfigAndSettings();
   Future<String> buildRepoPath(String directory);
+
   void changeFolderName(String name);
   bool get isStoreInternally;
   GitHash get cachedLastProcessedHead;
+  RemoteSyncFrequency get remoteSyncFrequency;
 }
 
 class StorageRepoImpl implements StorageRepo {
   final FileStorage fileStorage;
   final FileStorageCache fileStorageCache;
   final StorageConfig storageConfig;
+  final Settings settings;
 
   StorageRepoImpl({
     required this.fileStorage,
     required this.fileStorageCache,
     required this.storageConfig,
+    required this.settings,
   });
 
   @override
@@ -62,12 +67,24 @@ class StorageRepoImpl implements StorageRepo {
   }
 
   @override
-  Future<void> saveConfig() async {
-    await storageConfig.save();
+  Future<String> buildRepoPath(String directory) {
+    return storageConfig.buildRepoPath(directory);
   }
 
   @override
-  Future<String> buildRepoPath(String directory) {
-    return storageConfig.buildRepoPath(directory);
+  RemoteSyncFrequency get remoteSyncFrequency => settings.remoteSyncFrequency;
+
+  @override
+  Future<void> saveConfigAndSettings() async {
+    _saveConfig();
+    _saveSettings();
+  }
+
+  Future<void> _saveSettings() async {
+    await settings.save();
+  }
+
+  Future<void> _saveConfig() async {
+    await storageConfig.save();
   }
 }
