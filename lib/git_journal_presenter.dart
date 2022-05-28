@@ -12,7 +12,6 @@ import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gitjournal/analytics/analytics.dart';
-import 'package:gitjournal/core/file/file_storage.dart';
 import 'package:gitjournal/core/file/file_storage_cache.dart';
 import 'package:gitjournal/core/folder/notes_folder_config.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
@@ -22,6 +21,7 @@ import 'package:gitjournal/core/notes_cache.dart';
 import 'package:gitjournal/domain/folder_usecases.dart';
 import 'package:gitjournal/domain/git_journal_repo.dart';
 import 'package:gitjournal/domain/note_usecases.dart';
+import 'package:gitjournal/domain/storage_repo.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/repository_manager.dart';
@@ -45,8 +45,8 @@ class GitJournalPresenter with ChangeNotifier {
   // final NotesFolderConfig folderConfig;
   final Settings settings;
 
-  final FileStorage fileStorage;
-  final FileStorageCache fileStorageCache;
+  // final FileStorage fileStorage;
+  // final FileStorageCache fileStorageCache;
 
   // final _gitOpLock = Lock();
   // final _loadLock = Lock();
@@ -63,6 +63,7 @@ class GitJournalPresenter with ChangeNotifier {
   // late final GitNoteRepository _gitRepo;
   // late final NotesCache _notesCache;
   // late final NotesFolderFS rootFolder;
+  final StorageRepo storageRepo;
 
   final NoteUsecases noteUsecases;
   final FolderUsecases folderUsecases;
@@ -220,6 +221,9 @@ class GitJournalPresenter with ChangeNotifier {
       folderConfig: folderConfig,
     );
 
+    final _storageRepo = StorageRepoImpl(
+        fileStorage: fileStorage, fileStorageCache: fileStorageCache);
+
     var gjRepo = GitJournalPresenter._internal(
       repoManager: repoManager,
       repoPath: repoPath,
@@ -230,8 +234,8 @@ class GitJournalPresenter with ChangeNotifier {
       settings: settings,
       // gitConfig: gitConfig,
       id: id,
-      fileStorage: fileStorage,
-      fileStorageCache: fileStorageCache,
+      // fileStorage: fileStorage,
+      // fileStorageCache: fileStorageCache,
       currentBranch: await repo.currentBranch().getOrThrow(),
       headHash: head,
       loadFromCache: loadFromCache,
@@ -239,6 +243,7 @@ class GitJournalPresenter with ChangeNotifier {
       noteUsecases: _noteUsecases,
       folderUsecases: _folderUsecases,
       gitJournalRepo: _gitJournalRepo,
+      storageRepo: _storageRepo,
     );
 
     return Result(gjRepo);
@@ -255,8 +260,8 @@ class GitJournalPresenter with ChangeNotifier {
     required this.settings,
     // required this.gitConfig,
     required this.remoteGitRepoConfigured,
-    required this.fileStorage,
-    required this.fileStorageCache,
+    // required this.fileStorage,
+    // required this.fileStorageCache,
     required String? currentBranch,
     required GitHash headHash,
     required bool loadFromCache,
@@ -264,6 +269,7 @@ class GitJournalPresenter with ChangeNotifier {
     required this.noteUsecases,
     required this.folderUsecases,
     required this.gitJournalRepo,
+    required this.storageRepo,
   }) {
     _currentBranch = currentBranch;
 
@@ -277,7 +283,7 @@ class GitJournalPresenter with ChangeNotifier {
 
     Log.i("Cache Directory: $cacheDir");
 
-    fileStorageCacheReady = headHash == fileStorageCache.lastProcessedHead;
+    fileStorageCacheReady = headHash == storageRepo.cachedLastProcessedHead;
 
     if (loadFromCache) _loadFromCache();
     if (syncOnBoot) _syncNotes();
@@ -298,7 +304,7 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<void> _resetFileStorage() async {
-    await fileStorageCache.clear();
+    await storageRepo.clearStorageCache();
 
     // This will discard this Repository and build a new one
     var _ = repoManager.buildActiveRepository();
@@ -323,29 +329,15 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<void> _fillFileStorageCache() {
-    return _cacheBuildingLock.synchronized(__fillFileStorageCache);
-  }
+    return _cacheBuildingLock.synchronized(
+      () async {
+        await storageRepo.fillStorageCache();
 
-  Future<void> __fillFileStorageCache() async {
-    var firstTime = fileStorage.head.isEmpty;
-
-    var startTime = DateTime.now();
-    await fileStorage.fill();
-    var endTime = DateTime.now().difference(startTime);
-
-    if (firstTime) Log.i("Built Git Time Cache - $endTime");
-
-    var r = await fileStorageCache.save(fileStorage);
-    if (r.isFailure) {
-      Log.e("Failed to save FileStorageCache", result: r);
-      logException(r.exception!, r.stackTrace!);
-    }
-
-    assert(fileStorageCache.lastProcessedHead == fileStorage.head);
-
-    // Notify that the cache is ready
-    fileStorageCacheReady = true;
-    notifyListeners();
+        // Notify that the cache is ready
+        fileStorageCacheReady = true;
+        notifyListeners();
+      },
+    );
   }
 
   bool _shouldCheckForChanges() {
