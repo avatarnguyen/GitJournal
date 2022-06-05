@@ -17,7 +17,8 @@ class CacheLoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var fileStorage = context.read<GitJournalPresenter>().fileStorage;
+    var fileStorage =
+        context.read<GitJournalPresenter>().storageRepo.fileStorageInstance;
     return _CacheLoadingScreen(fileStorage);
   }
 }

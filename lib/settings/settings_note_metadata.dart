@@ -63,7 +63,8 @@ class _NoteMetadataSettingsScreenState
     }
 
     var repo = context.read<GitJournalPresenter>();
-    var parent = NotesFolderFS.root(folderConfig, repo.fileStorage);
+    final fileStorage = repo.storageRepo.fileStorageInstance;
+    var parent = NotesFolderFS.root(folderConfig, fileStorage);
     var note = Note.build(
       title: tr("settings.noteMetaData.exampleTitle"),
       body: tr("settings.noteMetaData.exampleBody"),

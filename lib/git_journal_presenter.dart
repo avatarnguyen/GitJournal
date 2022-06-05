@@ -40,17 +40,7 @@ import 'package:universal_io/io.dart' as io;
 
 class GitJournalPresenter with ChangeNotifier {
   final RepositoryManager repoManager;
-  // final StorageConfig storageConfig;
-  // final Settings settings;
-  // final GitConfig gitConfig;
-  // final NotesFolderConfig folderConfig;
 
-  // final FileStorage fileStorage;
-  // final FileStorageCache fileStorageCache;
-
-  // final _gitOpLock = Lock();
-  // final _loadLock = Lock();
-  // final _networkLock = Lock();
   final _cacheBuildingLock = Lock();
 
   /// The private directory where the 'git repo' is stored.
@@ -60,15 +50,11 @@ class GitJournalPresenter with ChangeNotifier {
 
   final String repoPath;
 
-  // late final GitNoteRepository _gitRepo;
-  // late final NotesCache _notesCache;
-  // late final NotesFolderFS rootFolder;
-  final StorageRepo storageRepo;
-
   final NoteUsecases noteUsecases;
   final FolderUsecases folderUsecases;
 
   final GitJournalRepo gitJournalRepo;
+  final StorageRepo storageRepo;
 
   //
   // Mutable stuff
@@ -234,12 +220,7 @@ class GitJournalPresenter with ChangeNotifier {
       gitBaseDirectory: gitBaseDir,
       cacheDir: cacheDir,
       remoteGitRepoConfigured: remoteConfigured,
-      // storageConfig: storageConfig,
-      // settings: settings,
-      // gitConfig: gitConfig,
       id: id,
-      // fileStorage: fileStorage,
-      // fileStorageCache: fileStorageCache,
       currentBranch: await repo.currentBranch().getOrThrow(),
       headHash: head,
       loadFromCache: loadFromCache,
@@ -259,13 +240,7 @@ class GitJournalPresenter with ChangeNotifier {
     required this.repoManager,
     required this.gitBaseDirectory,
     required this.cacheDir,
-    // required this.storageConfig,
-    // required this.folderConfig,
-    // required this.settings,
-    // required this.gitConfig,
     required this.remoteGitRepoConfigured,
-    // required this.fileStorage,
-    // required this.fileStorageCache,
     required String? currentBranch,
     required GitHash headHash,
     required bool loadFromCache,

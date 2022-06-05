@@ -65,7 +65,7 @@ class GitJournalChangeNotifiers extends StatelessWidget {
   }
 
   Widget _buildRepoDependentProviders(GitJournalPresenter repo) {
-    var folderConfig = repo.folderConfig;
+    final folderConfig = repo.folderUsecases.folderConfig;
 
     return MultiProvider(
       providers: [

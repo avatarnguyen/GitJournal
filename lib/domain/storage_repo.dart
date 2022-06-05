@@ -16,6 +16,7 @@ abstract class StorageRepo {
   bool get isStoreInternally;
   GitHash get cachedLastProcessedHead;
   RemoteSyncFrequency get remoteSyncFrequency;
+  FileStorage get fileStorageInstance;
 }
 
 class StorageRepoImpl implements StorageRepo {
@@ -87,4 +88,7 @@ class StorageRepoImpl implements StorageRepo {
   Future<void> _saveConfig() async {
     await storageConfig.save();
   }
+
+  @override
+  FileStorage get fileStorageInstance => fileStorage;
 }
