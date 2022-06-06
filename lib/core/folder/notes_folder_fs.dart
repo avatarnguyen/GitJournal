@@ -500,6 +500,8 @@ class NotesFolderFS extends NotesFolderNotifier implements NotesFolder {
   }
 
   void remove(Note note) {
+    Log.i('Note to remove: $note');
+    Log.d('Note File oid is NOT empty: ${note.oid.isNotEmpty}');
     assert(note.parent == this);
     assert(note.oid.isNotEmpty);
     _removeFile(note);

@@ -333,6 +333,7 @@ class NoteEditorState extends State<NoteEditor>
 
   @override
   Future<void> exitEditorSelected(Note note) async {
+    Log.d("Note oid: ${note.oid}");
     assert(note.oid.isEmpty);
 
     var saved = await _saveNote(note);
@@ -376,6 +377,7 @@ class NoteEditorState extends State<NoteEditor>
 
       var originalNote = widget.existingNote!;
       var renameResult = await container.renameNote(originalNote, newFileName);
+      Log.d('---------- $renameResult -----------');
       if (renameResult.isFailure) {
         await showAlertDialog(
           context,
@@ -386,6 +388,7 @@ class NoteEditorState extends State<NoteEditor>
       if (!mounted) return;
 
       var newNote = renameResult.getOrThrow();
+      Log.i('Note old: $_note - new note: $newNote');
       setState(() {
         _note = newNote;
       });
