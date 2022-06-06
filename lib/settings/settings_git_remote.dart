@@ -77,10 +77,13 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
             title: tr(LocaleKeys.settings_gitRemote_branch),
             currentOption: currentBranch, // FIXME
             options: branches,
-            onChange: (String branch) {
-              var _ = repo.checkoutBranch(branch);
+            onChange: (String branch) async {
+              final branchName =
+                  await context.read<GitJournalRepo>().checkoutBranch(branch);
+
+              var _ = repo.reloadAfterCheckoutBranch(branchName);
               setState(() {
-                currentBranch = branch;
+                currentBranch = branchName;
               });
             },
           ),

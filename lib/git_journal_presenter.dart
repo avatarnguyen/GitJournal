@@ -18,7 +18,6 @@ import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/notes_cache.dart';
 import 'package:gitjournal/domain/folder_usecases.dart';
-import 'package:gitjournal/domain/git_journal_repo.dart';
 import 'package:gitjournal/domain/note_usecases.dart';
 import 'package:gitjournal/domain/storage_repo.dart';
 import 'package:gitjournal/error_reporting.dart';
@@ -51,7 +50,7 @@ class GitJournalPresenter with ChangeNotifier {
   final NoteUsecases noteUsecases;
   final FolderUsecases folderUsecases;
 
-  final GitJournalRepo gitJournalRepo;
+  // final GitJournalRepo gitJournalRepo;
   final StorageRepo storageRepo;
 
   final NotesFolderFS rootFolder;
@@ -157,9 +156,6 @@ class GitJournalPresenter with ChangeNotifier {
     var headR = await repo.headHash();
     var head = headR.isFailure ? GitHash.zero() : headR.getOrThrow();
 
-    //TODO: Remove after refactoring
-    final _gitJournalRepo = GitJournalRepoImpl(repoPath);
-
     final _gitOpLock = Lock();
 
     final rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
@@ -206,7 +202,6 @@ class GitJournalPresenter with ChangeNotifier {
       syncOnBoot: syncOnBoot,
       noteUsecases: _noteUsecases,
       folderUsecases: _folderUsecases,
-      gitJournalRepo: _gitJournalRepo,
       storageRepo: _storageRepo,
     );
 
@@ -259,7 +254,6 @@ class GitJournalPresenter with ChangeNotifier {
     required bool syncOnBoot,
     required this.noteUsecases,
     required this.folderUsecases,
-    required this.gitJournalRepo,
     required this.storageRepo,
   }) {
     _currentBranch = currentBranch;
@@ -616,8 +610,6 @@ class GitJournalPresenter with ChangeNotifier {
     await folderUsecases.saveGitConfig();
   }
 
-  // *************** Git Methods ********************************
-
   Future<void> moveRepoToPath() async {
     var newRepoPath = await storageRepo.buildRepoPath(gitBaseDirectory);
 
@@ -653,13 +645,14 @@ class GitJournalPresenter with ChangeNotifier {
 
   String? get currentBranch => _currentBranch;
 
-  Future<String> checkoutBranch(String branchName) async {
+  // final branch = await gitJournalRepo.checkoutBranch(branchName);
+  // branch is branchName because gitjournalrepo will be executed before this
+  // method and then pass on the branchName
+  Future<String> reloadAfterCheckoutBranch(String branchName) async {
     Log.i("Changing branch to $branchName");
 
     try {
-      final branch = await gitJournalRepo.checkoutBranch(branchName);
-
-      if (branch.isEmpty) {
+      if (branchName.isEmpty) {
         return "";
       }
     } catch (ex, st) {
