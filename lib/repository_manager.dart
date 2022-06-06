@@ -52,6 +52,9 @@ class RepositoryManager with ChangeNotifier {
   late RepoConfig _repoConfig;
   RepoConfig get repoConfig => _repoConfig;
 
+  late String _repoPath;
+  String get repoPath => _repoPath;
+
   Future<Result<GitJournalPresenter>> buildActiveRepository({
     bool loadFromCache = true,
     bool syncOnBoot = true,
@@ -63,9 +66,13 @@ class RepositoryManager with ChangeNotifier {
     notifyListeners();
 
     await migrateSettings(currentId, pref, gitBaseDir);
+
+    // Init all configs
     _repoConfig = RepoConfig(currentId, pref);
 
-    var r = await GitJournalPresenter.load(
+    _repoPath = await _repoConfig.storageConfig.buildRepoPath(gitBaseDir);
+
+    var gitJournal = await GitJournalPresenter.load(
       repoManager: this,
       gitBaseDir: gitBaseDir,
       cacheDir: repoCacheDir,
@@ -73,14 +80,15 @@ class RepositoryManager with ChangeNotifier {
       id: currentId,
       loadFromCache: loadFromCache,
       syncOnBoot: syncOnBoot,
+      repoPath: _repoPath,
     );
-    if (r.isFailure) {
-      Log.e("buildActiveRepo", result: r);
-      _repoError = r.error;
-      return fail(r);
+    if (gitJournal.isFailure) {
+      Log.e("buildActiveRepo", result: gitJournal);
+      _repoError = gitJournal.error;
+      return fail(gitJournal);
     }
 
-    _repo = r.getOrThrow();
+    _repo = gitJournal.getOrThrow();
 
     notifyListeners();
     return Result(_repo!);

@@ -6,7 +6,6 @@
 
 import 'dart:async';
 
-import 'package:dart_git/config.dart';
 import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:flutter/foundation.dart';
@@ -88,6 +87,7 @@ class GitJournalPresenter with ChangeNotifier {
     required String gitBaseDir,
     required String cacheDir,
     // required SharedPreferences pref,
+    required String repoPath,
     required String id,
     required RepositoryManager repoManager,
     bool loadFromCache = true,
@@ -110,7 +110,6 @@ class GitJournalPresenter with ChangeNotifier {
     _configureAndLogSentry(
         storageConfig, folderConfig, gitConfig, settings, id);
 
-    var repoPath = await storageConfig.buildRepoPath(gitBaseDir);
     Log.i("Loading Repo at path $repoPath");
 
     var repoDir = io.Directory(repoPath);
@@ -158,7 +157,7 @@ class GitJournalPresenter with ChangeNotifier {
     var headR = await repo.headHash();
     var head = headR.isFailure ? GitHash.zero() : headR.getOrThrow();
 
-    //TODO: this should be through DI
+    //TODO: Remove after refactoring
     final _gitJournalRepo = GitJournalRepoImpl(repoPath);
 
     final _gitOpLock = Lock();
@@ -644,13 +643,13 @@ class GitJournalPresenter with ChangeNotifier {
     await reloadNotes();
   }
 
-  Future<List<GitRemoteConfig>> remoteConfigs() async {
-    return gitJournalRepo.remoteConfigs();
-  }
-
-  Future<List<String>> branches() async {
-    return gitJournalRepo.branches();
-  }
+  // Future<List<GitRemoteConfig>> remoteConfigs() async {
+  //   return gitJournalRepo.remoteConfigs();
+  // }
+  //
+  // Future<List<String>> branches() async {
+  //   return gitJournalRepo.branches();
+  // }
 
   String? get currentBranch => _currentBranch;
 
@@ -683,11 +682,13 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   // FIXME: Why does this need to return a string?
+  ///! this method has not been used anywhere in the app.
   /// throws exceptions
-  Future<String> createBranchIfRequired(
-      GitAsyncRepository repo, String name) async {
-    return gitJournalRepo.createBranchIfRequired(repo, name);
-  }
+  // Future<String> createBranchIfRequired(
+  //     GitAsyncRepository repo, String name) async {
+  // return gitJournalRepo.createBranchIfRequired(repo, name);
+  //   return '';
+  // }
 
   Future<void> delete() async {
     await io.Directory(repoPath).delete(recursive: true);
@@ -712,21 +713,21 @@ class GitJournalPresenter with ChangeNotifier {
     });
   }
 
-  Future<Result<bool>> canResetHard() {
-    return gitJournalRepo.canResetHard();
-  }
-
-  Future<Result<void>> removeRemote(String remoteName) async {
-    return gitJournalRepo.removeRemote(remoteName);
-  }
-
-  Future<Result<void>> ensureValidRepo() async {
-    return gitJournalRepo.ensureValidRepo();
-  }
-
-  Future<Result<void>> init(String repoPath) async {
-    return gitJournalRepo.init(repoPath);
-  }
+  // Future<Result<bool>> canResetHard() {
+  //   return gitJournalRepo.canResetHard();
+  // }
+  //
+  // Future<Result<void>> removeRemote(String remoteName) async {
+  //   return gitJournalRepo.removeRemote(remoteName);
+  // }
+  //
+  // Future<Result<void>> ensureValidRepo() async {
+  //   return gitJournalRepo.ensureValidRepo();
+  // }
+  //
+  // Future<Result<void>> init(String repoPath) async {
+  //   return gitJournalRepo.init(repoPath);
+  // }
 }
 
 // *********** End class ************

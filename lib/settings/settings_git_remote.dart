@@ -7,6 +7,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gitjournal/domain/git_journal_repo.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
 import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
@@ -44,7 +45,7 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
     var repo = Provider.of<GitJournalPresenter>(context);
 
     if (remoteHost.isEmpty) {
-      repo.remoteConfigs().then((list) {
+      context.read<GitJournalRepo>().remoteConfigs().then((list) {
         setState(() {
           if (!mounted) return;
           remoteHost = list.first.url;
@@ -54,7 +55,7 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
 
     if (branches.isEmpty) {
       currentBranch = repo.currentBranch ?? "";
-      repo.branches().then((list) {
+      context.read<GitJournalRepo>().branches().then((list) {
         setState(() {
           if (!mounted) return;
           branches = list;
@@ -129,8 +130,8 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
           onPressed: _reconfigureGitHost,
         ),
         FutureBuilderWithProgress(future: () async {
-          var repo = context.watch<GitJournalPresenter>();
-          var result = await repo.canResetHard();
+          // var repo = context.watch<GitJournalPresenter>();
+          final result = await context.read<GitJournalRepo>().canResetHard();
           if (result.isFailure) {
             showResultError(context, result);
             return const SizedBox();
@@ -243,8 +244,9 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
     while (true) {
       var repoFolderPath = p.join(gitDir, "$repoFolderName$num");
       if (!Directory(repoFolderPath).existsSync()) {
-        var r = await repo.init(repoFolderPath);
-        showResultError(context, r);
+        final result =
+            await context.read<GitJournalRepo>().init(repoFolderPath);
+        showResultError(context, result);
         break;
       }
       num++;
