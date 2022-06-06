@@ -18,6 +18,7 @@ import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/core/notes/note.dart';
 import 'package:gitjournal/core/views/inline_tags_view.dart';
+import 'package:gitjournal/domain/git_journal_repo.dart';
 import 'package:gitjournal/editors/checklist_editor.dart';
 import 'package:gitjournal/editors/common.dart';
 import 'package:gitjournal/editors/common_types.dart';
@@ -575,8 +576,8 @@ class NoteEditorState extends State<NoteEditor>
     assert(note.oid.isEmpty);
 
     if (!_isNewNote) {
-      var stateContainer = context.read<GitJournalPresenter>();
-      stateContainer.discardChanges(note);
+      await context.read<GitJournalRepo>().discardChanges(note.filePath);
+      context.read<GitJournalPresenter>().reloadNotes();
     }
 
     Navigator.pop(context);

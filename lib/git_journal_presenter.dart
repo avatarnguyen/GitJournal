@@ -634,14 +634,14 @@ class GitJournalPresenter with ChangeNotifier {
     }
   }
 
-  Future<void> discardChanges(Note note) async {
-    // FIXME: Add the checkout method to GJRepo
-    await gitJournalRepo.discardChanges(note.filePath);
-
-    // FIXME: Instead of this just reload that specific file
-    // FIXME: I don't think this will work!
-    await reloadNotes();
-  }
+  // Future<void> discardChanges(Note note) async {
+  //   // FIXME: Add the checkout method to GJRepo
+  //   await gitJournalRepo.discardChanges(note.filePath);
+  //
+  //   // FIXME: Instead of this just reload that specific file
+  //   // FIXME: I don't think this will work!
+  //   await reloadNotes();
+  // }
 
   // Future<List<GitRemoteConfig>> remoteConfigs() async {
   //   return gitJournalRepo.remoteConfigs();
