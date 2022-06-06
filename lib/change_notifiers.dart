@@ -65,13 +65,15 @@ class GitJournalChangeNotifiers extends StatelessWidget {
   }
 
   Widget _buildRepoDependentProviders(GitJournalPresenter repo) {
-    final folderConfig = repo.folderUsecases.folderConfig;
-
+    final folderConfig = repoManager.folderConfig;
+    final gitConfig = repoManager.gitConfig;
+    final storageConfig = repoManager.storageConfig;
+    final settings = repoManager.settings;
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<GitConfig>.value(value: repo.gitConfig),
-        ChangeNotifierProvider<StorageConfig>.value(value: repo.storageConfig),
-        ChangeNotifierProvider<Settings>.value(value: repo.settings),
+        ChangeNotifierProvider<GitConfig>.value(value: gitConfig),
+        ChangeNotifierProvider<StorageConfig>.value(value: storageConfig),
+        ChangeNotifierProvider<Settings>.value(value: settings),
         ChangeNotifierProvider<NotesFolderConfig>.value(value: folderConfig),
       ],
       child: _buildNoteMaterializedViews(

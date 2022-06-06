@@ -56,6 +56,7 @@ class GitJournalPresenter with ChangeNotifier {
   final GitJournalRepo gitJournalRepo;
   final StorageRepo storageRepo;
 
+  final NotesFolderFS rootFolder;
   //
   // Mutable stuff
   //
@@ -95,17 +96,18 @@ class GitJournalPresenter with ChangeNotifier {
   }) async {
     await migrateSettings(id, pref, gitBaseDir);
 
-    var storageConfig = StorageConfig(id, pref);
-    storageConfig.load();
+    // var storageConfig = StorageConfig(id, pref);
+    // storageConfig.load();
+    var storageConfig = repoManager.storageConfig;
 
-    var folderConfig = NotesFolderConfig(id, pref);
-    folderConfig.load();
+    var folderConfig = repoManager.folderConfig;
+    // folderConfig.load();
 
-    var gitConfig = GitConfig(id, pref);
-    gitConfig.load();
+    var gitConfig = repoManager.gitConfig;
+    // gitConfig.load();
 
-    var settings = Settings(id, pref);
-    settings.load();
+    var settings = repoManager.settings;
+    // settings.load();
 
     _configureAndLogSentry(
         storageConfig, folderConfig, gitConfig, settings, id);
@@ -195,6 +197,7 @@ class GitJournalPresenter with ChangeNotifier {
 
     var gjRepo = GitJournalPresenter._internal(
       repoManager: repoManager,
+      rootFolder: rootFolder,
       repoPath: repoPath,
       gitBaseDirectory: gitBaseDir,
       cacheDir: cacheDir,
@@ -246,6 +249,7 @@ class GitJournalPresenter with ChangeNotifier {
 
   GitJournalPresenter._internal({
     required this.id,
+    required this.rootFolder,
     required this.repoPath,
     required this.repoManager,
     required this.gitBaseDirectory,

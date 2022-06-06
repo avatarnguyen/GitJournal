@@ -5,8 +5,10 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:gitjournal/core/folder/notes_folder_config.dart';
 import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
+import 'package:gitjournal/settings/git_config.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/storage_config.dart';
 import 'package:gitjournal/utils/result.dart';
@@ -37,11 +39,33 @@ class RepositoryManager with ChangeNotifier {
   GitJournalPresenter? get currentRepo => _repo;
   Object? get currentRepoError => _repoError;
 
+  late GitConfig _gitConfig;
+  late Settings _settings;
+  late StorageConfig _storageConfig;
+  late NotesFolderConfig _folderConfig;
+
+  StorageConfig get storageConfig => _storageConfig;
+  NotesFolderConfig get folderConfig => _folderConfig;
+  GitConfig get gitConfig => _gitConfig;
+  Settings get settings => _settings;
+
   Future<Result<GitJournalPresenter>> buildActiveRepository({
     bool loadFromCache = true,
     bool syncOnBoot = true,
   }) async {
     var repoCacheDir = p.join(cacheDir, currentId);
+
+    _storageConfig = StorageConfig(currentId, pref);
+    _storageConfig.load();
+
+    _folderConfig = NotesFolderConfig(currentId, pref);
+    _folderConfig.load();
+
+    _gitConfig = GitConfig(currentId, pref);
+    _gitConfig.load();
+
+    _settings = Settings(currentId, pref);
+    _settings.load();
 
     _repo = null;
     _repoError = null;
