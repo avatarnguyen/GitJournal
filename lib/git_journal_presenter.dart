@@ -107,29 +107,8 @@ class GitJournalPresenter with ChangeNotifier {
     var settings = Settings(id, pref);
     settings.load();
 
-    Sentry.configureScope((scope) {
-      scope.setContexts('StorageConfig', storageConfig.toLoggableMap());
-      scope.setContexts('FolderConfig', folderConfig.toLoggableMap());
-      scope.setContexts('GitConfig', gitConfig.toLoggableMap());
-      scope.setContexts('Settings', settings.toLoggableMap());
-    });
-
-    logEvent(
-      Event.StorageConfig,
-      parameters: storageConfig.toLoggableMap()..addAll({'id': id}),
-    );
-    logEvent(
-      Event.FolderConfig,
-      parameters: folderConfig.toLoggableMap()..addAll({'id': id}),
-    );
-    logEvent(
-      Event.GitConfig,
-      parameters: gitConfig.toLoggableMap()..addAll({'id': id}),
-    );
-    logEvent(
-      Event.Settings,
-      parameters: settings.toLoggableMap()..addAll({'id': id}),
-    );
+    _configureAndLogSentry(
+        storageConfig, folderConfig, gitConfig, settings, id);
 
     var repoPath = await storageConfig.buildRepoPath(gitBaseDir);
     Log.i("Loading Repo at path $repoPath");
@@ -234,6 +213,37 @@ class GitJournalPresenter with ChangeNotifier {
     return Result(gjRepo);
   }
 
+  static void _configureAndLogSentry(
+      StorageConfig storageConfig,
+      NotesFolderConfig folderConfig,
+      GitConfig gitConfig,
+      Settings settings,
+      String id) {
+    Sentry.configureScope((scope) {
+      scope.setContexts('StorageConfig', storageConfig.toLoggableMap());
+      scope.setContexts('FolderConfig', folderConfig.toLoggableMap());
+      scope.setContexts('GitConfig', gitConfig.toLoggableMap());
+      scope.setContexts('Settings', settings.toLoggableMap());
+    });
+
+    logEvent(
+      Event.StorageConfig,
+      parameters: storageConfig.toLoggableMap()..addAll({'id': id}),
+    );
+    logEvent(
+      Event.FolderConfig,
+      parameters: folderConfig.toLoggableMap()..addAll({'id': id}),
+    );
+    logEvent(
+      Event.GitConfig,
+      parameters: gitConfig.toLoggableMap()..addAll({'id': id}),
+    );
+    logEvent(
+      Event.Settings,
+      parameters: settings.toLoggableMap()..addAll({'id': id}),
+    );
+  }
+
   GitJournalPresenter._internal({
     required this.id,
     required this.repoPath,
@@ -286,8 +296,11 @@ class GitJournalPresenter with ChangeNotifier {
     await storageRepo.clearStorageCache();
 
     // This will discard this Repository and build a new one
-    var _ = repoManager.buildActiveRepository();
+    var _ = _rebuildGitJournalPresenter();
   }
+
+  Future<Result<GitJournalPresenter>> _rebuildGitJournalPresenter() =>
+      repoManager.buildActiveRepository();
 
   Future<void> reloadNotes() => _loadNotes();
 
@@ -579,7 +592,7 @@ class GitJournalPresenter with ChangeNotifier {
       Log.i("Old Path: $repoPath");
       Log.i("New Path: $newRepoPath");
 
-      var _ = repoManager.buildActiveRepository();
+      var _ = _rebuildGitJournalPresenter();
       return;
     }
 
@@ -614,7 +627,7 @@ class GitJournalPresenter with ChangeNotifier {
       await _copyDirectory(repoPath, newRepoPath);
       _ = await io.Directory(repoPath).delete(recursive: true);
 
-      _ = repoManager.buildActiveRepository();
+      _ = _rebuildGitJournalPresenter();
     }
   }
 
