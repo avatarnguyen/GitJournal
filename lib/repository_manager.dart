@@ -5,11 +5,11 @@
  */
 
 import 'package:flutter/material.dart';
-import 'package:gitjournal/core/folder/notes_folder_config.dart';
 import 'package:gitjournal/git_journal_presenter.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/settings/git_config.dart';
+import 'package:gitjournal/repo_config.dart';
 import 'package:gitjournal/settings/settings.dart';
+import 'package:gitjournal/settings/settings_migrations.dart';
 import 'package:gitjournal/settings/storage_config.dart';
 import 'package:gitjournal/utils/result.dart';
 import 'package:path/path.dart' as p;
@@ -39,15 +39,18 @@ class RepositoryManager with ChangeNotifier {
   GitJournalPresenter? get currentRepo => _repo;
   Object? get currentRepoError => _repoError;
 
-  late GitConfig _gitConfig;
-  late Settings _settings;
-  late StorageConfig _storageConfig;
-  late NotesFolderConfig _folderConfig;
+  // late GitConfig _gitConfig;
+  // late Settings _settings;
+  // late StorageConfig _storageConfig;
+  // late NotesFolderConfig _folderConfig;
+  //
+  // StorageConfig get storageConfig => _storageConfig;
+  // NotesFolderConfig get folderConfig => _folderConfig;
+  // GitConfig get gitConfig => _gitConfig;
+  // Settings get settings => _settings;
 
-  StorageConfig get storageConfig => _storageConfig;
-  NotesFolderConfig get folderConfig => _folderConfig;
-  GitConfig get gitConfig => _gitConfig;
-  Settings get settings => _settings;
+  late RepoConfig _repoConfig;
+  RepoConfig get repoConfig => _repoConfig;
 
   Future<Result<GitJournalPresenter>> buildActiveRepository({
     bool loadFromCache = true,
@@ -55,27 +58,18 @@ class RepositoryManager with ChangeNotifier {
   }) async {
     var repoCacheDir = p.join(cacheDir, currentId);
 
-    _storageConfig = StorageConfig(currentId, pref);
-    _storageConfig.load();
-
-    _folderConfig = NotesFolderConfig(currentId, pref);
-    _folderConfig.load();
-
-    _gitConfig = GitConfig(currentId, pref);
-    _gitConfig.load();
-
-    _settings = Settings(currentId, pref);
-    _settings.load();
-
     _repo = null;
     _repoError = null;
     notifyListeners();
+
+    await migrateSettings(currentId, pref, gitBaseDir);
+    _repoConfig = RepoConfig(currentId, pref);
 
     var r = await GitJournalPresenter.load(
       repoManager: this,
       gitBaseDir: gitBaseDir,
       cacheDir: repoCacheDir,
-      pref: pref,
+      // pref: pref,
       id: currentId,
       loadFromCache: loadFromCache,
       syncOnBoot: syncOnBoot,

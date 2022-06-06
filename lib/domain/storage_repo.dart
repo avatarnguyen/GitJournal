@@ -17,8 +17,6 @@ abstract class StorageRepo {
   GitHash get cachedLastProcessedHead;
   RemoteSyncFrequency get remoteSyncFrequency;
   FileStorage get fileStorageInstance;
-  StorageConfig get storageConfigInstance;
-  Settings get settingsInstance;
 }
 
 class StorageRepoImpl implements StorageRepo {
@@ -93,10 +91,4 @@ class StorageRepoImpl implements StorageRepo {
 
   @override
   FileStorage get fileStorageInstance => fileStorage;
-
-  @override
-  StorageConfig get storageConfigInstance => storageConfig;
-
-  @override
-  Settings get settingsInstance => settings;
 }

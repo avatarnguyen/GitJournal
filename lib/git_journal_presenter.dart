@@ -27,7 +27,6 @@ import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/git_config.dart';
 import 'package:gitjournal/settings/settings.dart';
-import 'package:gitjournal/settings/settings_migrations.dart';
 import 'package:gitjournal/settings/storage_config.dart';
 import 'package:gitjournal/sync_attempt.dart';
 import 'package:path/path.dart' as path;
@@ -88,25 +87,24 @@ class GitJournalPresenter with ChangeNotifier {
   static Future<Result<GitJournalPresenter>> load({
     required String gitBaseDir,
     required String cacheDir,
-    required SharedPreferences pref,
+    // required SharedPreferences pref,
     required String id,
     required RepositoryManager repoManager,
     bool loadFromCache = true,
     bool syncOnBoot = true,
   }) async {
-    await migrateSettings(id, pref, gitBaseDir);
-
     // var storageConfig = StorageConfig(id, pref);
     // storageConfig.load();
-    var storageConfig = repoManager.storageConfig;
+    final _repoConfig = repoManager.repoConfig;
+    var storageConfig = _repoConfig.storageConfig;
 
-    var folderConfig = repoManager.folderConfig;
+    var folderConfig = _repoConfig.folderConfig;
     // folderConfig.load();
 
-    var gitConfig = repoManager.gitConfig;
+    var gitConfig = _repoConfig.gitConfig;
     // gitConfig.load();
 
-    var settings = repoManager.settings;
+    var settings = _repoConfig.settings;
     // settings.load();
 
     _configureAndLogSentry(
@@ -216,6 +214,7 @@ class GitJournalPresenter with ChangeNotifier {
     return Result(gjRepo);
   }
 
+  // TODO: maybe also possible to move into repository manager class
   static void _configureAndLogSentry(
       StorageConfig storageConfig,
       NotesFolderConfig folderConfig,
@@ -511,6 +510,7 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   Future<Result<Note>> addNote(Note note) async {
+    Log.d('--- Note oid is empty -> ${note.oid.isEmpty}');
     assert(note.oid.isEmpty);
     logEvent(Event.NoteAdded);
 

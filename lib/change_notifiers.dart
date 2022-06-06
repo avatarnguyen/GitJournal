@@ -65,10 +65,11 @@ class GitJournalChangeNotifiers extends StatelessWidget {
   }
 
   Widget _buildRepoDependentProviders(GitJournalPresenter repo) {
-    final folderConfig = repoManager.folderConfig;
-    final gitConfig = repoManager.gitConfig;
-    final storageConfig = repoManager.storageConfig;
-    final settings = repoManager.settings;
+    final _repoConfig = repoManager.repoConfig;
+    final folderConfig = _repoConfig.folderConfig;
+    final gitConfig = _repoConfig.gitConfig;
+    final storageConfig = _repoConfig.storageConfig;
+    final settings = _repoConfig.settings;
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<GitConfig>.value(value: gitConfig),
