@@ -141,22 +141,26 @@ class GitJournalRepoImpl implements GitJournalRepo {
 
   @override
   Future<Result<void>> resetHard() async {
-    var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
-    var branchName = await repo.currentBranch().getOrThrow();
-    var branchConfig = repo.config.branch(branchName);
-    if (branchConfig == null) {
-      throw Exception("Branch config for '$branchName' not found");
-    }
+    return await catchAll(
+      () async {
+        var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
+        var branchName = await repo.currentBranch().getOrThrow();
+        var branchConfig = repo.config.branch(branchName);
+        if (branchConfig == null) {
+          throw Exception("Branch config for '$branchName' not found");
+        }
 
-    var remoteName = branchConfig.remote;
-    if (remoteName == null) {
-      throw Exception("Branch config for '$branchName' missing remote");
-    }
-    var remoteBranch =
-        await repo.remoteBranch(remoteName, branchName).getOrThrow();
-    await repo.resetHard(remoteBranch.hash!).throwOnError();
+        var remoteName = branchConfig.remote;
+        if (remoteName == null) {
+          throw Exception("Branch config for '$branchName' missing remote");
+        }
+        var remoteBranch =
+            await repo.remoteBranch(remoteName, branchName).getOrThrow();
+        await repo.resetHard(remoteBranch.hash!).throwOnError();
 
-    return Result(null);
+        return Result(null);
+      },
+    );
   }
 
   @override

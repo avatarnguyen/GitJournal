@@ -282,8 +282,12 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
       return;
     }
 
-    var repo = context.read<GitJournalPresenter>();
-    var result = await repo.resetHard();
+    // TODO: check this logic again more closely, not sure whether this would work
+    final result = await context.read<GitJournalRepo>().resetHard();
+    if (result.isSuccess) {
+      await context.read<GitJournalPresenter>().reloadAfterResetRepo();
+    }
+
     showResultError(context, result);
 
     Navigator.of(context).popUntil((route) => route.isFirst);

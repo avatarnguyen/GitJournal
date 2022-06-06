@@ -696,24 +696,14 @@ class GitJournalPresenter with ChangeNotifier {
   }
 
   /// reset --hard the current branch to its remote branch
-  Future<Result<void>> resetHard() {
-    return catchAll(() async {
-      try {
-        final result = gitJournalRepo.resetHard();
-        numChanges = 0;
-        notifyListeners();
+  Future<void> reloadAfterResetRepo() async {
+    numChanges = 0;
+    notifyListeners();
 
-        _loadNotes();
-
-        return result;
-      } on Exception catch (error) {
-        Log.e(error.toString());
-        return Result.fail(error);
-      }
-    });
+    await _loadNotes();
   }
 
-  // Future<Result<bool>> canResetHard() {
+// Future<Result<bool>> canResetHard() {
   //   return gitJournalRepo.canResetHard();
   // }
   //
