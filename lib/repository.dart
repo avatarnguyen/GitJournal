@@ -527,10 +527,7 @@ class GitJournalRepo with ChangeNotifier {
     }
 
     var _ = await _gitOpLock.synchronized(() async {
-      var result = await _gitRepo.renameNote(
-        fromNote.filePath,
-        toNote.filePath,
-      );
+      Result<void> result = await renameGitNote(fromNote, toNote);
       if (result.isFailure) {
         Log.e("renameNote", result: result);
         return fail(result);
@@ -542,6 +539,14 @@ class GitJournalRepo with ChangeNotifier {
 
     unawaited(_syncNotes());
     return Result(toNote);
+  }
+
+  Future<Result<void>> renameGitNote(Note fromNote, Note toNote) async {
+    var result = await _gitRepo.renameNote(
+      fromNote.filePath,
+      toNote.filePath,
+    );
+    return result;
   }
 
   Future<Result<Note>> moveNote(Note note, NotesFolderFS destFolder) async {
