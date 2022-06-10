@@ -9,14 +9,14 @@ import 'dart:io' as io;
 import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:path/path.dart' as p;
-import 'package:test/test.dart';
-import 'package:universal_io/io.dart' as io;
-
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/notes/note.dart';
 import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/settings/settings.dart';
+import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
+import 'package:universal_io/io.dart' as io;
+
 import 'lib.dart';
 
 Future<void> main() async {
@@ -48,18 +48,24 @@ Future<void> main() async {
   test('Rename - Same Folder', () async {
     await _setup();
     var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
+    print('Note: $note');
 
     var newPath = "1_new.md";
     var newNote = await repo.renameNote(note, newPath).getOrThrow();
+    print('New Note: $newNote');
 
     expect(newNote.filePath, newPath);
     expect(newNote.fileFormat, NoteFileFormat.Markdown);
     expect(repo.rootFolder.getAllNotes().length, 3);
 
     var gitRepo = GitRepository.load(repoPath).getOrThrow();
-    expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+
+    var gitHash = gitRepo.headHash().getOrThrow();
+    print('Git Repo Hash: $gitHash');
+    expect(gitHash, isNot(headHash));
 
     var headCommit = gitRepo.headCommit().getOrThrow();
+    print('Head Commit: $headCommit');
     expect(headCommit.parents.length, 1);
     expect(headCommit.parents[0], headHash);
   });
@@ -343,6 +349,48 @@ Future<void> main() async {
     expect(headCommit.parents.length, 1);
     expect(headCommit.parents[0], headHash);
   });
+
+  test('Create folder', () async {
+    await _setup();
+    const folderName = 'test_removed';
+    var rootFolder = repo.rootFolder;
+    await repo.createFolder(rootFolder, folderName);
+
+    final folder = rootFolder.getFolderWithSpec(folderName);
+    expect(folder?.rootFolder, rootFolder);
+    expect(folder?.folderName, folderName);
+
+    final gitRepo = GitRepository.load(repoPath).getOrThrow();
+    expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+
+    var headCommit = gitRepo.headCommit().getOrThrow();
+    expect(headCommit.parents.length, 1);
+    expect(headCommit.parents[0], headHash);
+  });
+
+  // test('Remove folder', () async {
+  //   await _setup();
+  //   const folderName = 'test_removed';
+  //   await repo.createFolder(_rootFolder!, folderName);
+  //   //
+  //   final folder = _rootFolder!.getFolderWithSpec(folderName);
+  //   expect(folder?.rootFolder, _rootFolder!);
+  //   expect(folder?.folderName, folderName);
+  //
+  //   final removeHeadHash = GitHash('7fc65b59170bdc91013eb56cdc65fa3307f2e7de');
+  //   await _setup(head: removeHeadHash);
+  //   await repo.removeFolder(folder!);
+  //
+  //   final removedFolder = _rootFolder!.getFolderWithSpec(folderName);
+  //   expect(removedFolder, isNull);
+  //
+  //   final gitRepo = GitRepository.load(repoPath).getOrThrow();
+  //   expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+  //
+  //   var headCommit = gitRepo.headCommit().getOrThrow();
+  //   expect(headCommit.parents.length, 1);
+  //   expect(headCommit.parents[0], isNot(removeHeadHash));
+  // });
 }
 
 // Renames
