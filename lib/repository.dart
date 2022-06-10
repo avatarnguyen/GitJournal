@@ -521,7 +521,7 @@ class GitJournalRepo with ChangeNotifier {
       return Result.fail(ex);
     }
 
-    var renameR = fromNote.parent.renameNote(fromNote, toNote);
+    Result<void> renameR = renameLocalNote(fromNote, toNote);
     if (renameR.isFailure) {
       return fail(renameR);
     }
@@ -539,6 +539,11 @@ class GitJournalRepo with ChangeNotifier {
 
     unawaited(_syncNotes());
     return Result(toNote);
+  }
+
+  Result<void> renameLocalNote(Note fromNote, Note toNote) {
+    var renameR = fromNote.parent.renameNote(fromNote, toNote);
+    return renameR;
   }
 
   Future<Result<void>> renameGitNote(Note fromNote, Note toNote) async {
