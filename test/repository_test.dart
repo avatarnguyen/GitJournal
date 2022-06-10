@@ -45,7 +45,7 @@ Future<void> main() async {
     // baseDir.deleteSync(recursive: true);
   });
 
-  test('Rename - Same Folder', () async {
+  test('Rename Note - Same Folder', () async {
     await _setup();
     var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
     print('Note: $note');
@@ -70,7 +70,7 @@ Future<void> main() async {
     expect(headCommit.parents[0], headHash);
   });
 
-  test('Rename - Change File Type', () async {
+  test('Rename Note - Change File Type', () async {
     await _setup();
     var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
 
@@ -82,7 +82,7 @@ Future<void> main() async {
     expect(repo.rootFolder.getAllNotes().length, 3);
   });
 
-  test('Rename - Destination Exists', () async {
+  test('Rename Note - Destination Exists', () async {
     await _setup();
     var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
 
