@@ -26,6 +26,7 @@ import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/core/notes_cache.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/logger/logger.dart';
+import 'package:gitjournal/repository_lock.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/git_config.dart';
 import 'package:gitjournal/settings/settings.dart';
@@ -39,8 +40,6 @@ import 'package:synchronized/synchronized.dart';
 import 'package:time/time.dart';
 import 'package:universal_io/io.dart' show Platform;
 import 'package:universal_io/io.dart' as io;
-
-final gitOpLock = Lock();
 
 class GitJournalRepo with ChangeNotifier {
   final RepositoryManager repoManager;
@@ -378,6 +377,7 @@ class GitJournalRepo with ChangeNotifier {
 
       attempt.add(SyncStatus.Merging);
 
+      final gitOpLock = RepositoryLock().gitOpLock;
       await gitOpLock.synchronized(() async {
         var r = await _gitRepo.merge();
         if (r.isFailure) {
@@ -435,6 +435,7 @@ class GitJournalRepo with ChangeNotifier {
       NotesFolderFS parent, String folderName) async {
     logEvent(Event.FolderAdded);
 
+    final gitOpLock = RepositoryLock().gitOpLock;
     var r = await gitOpLock.synchronized(() async {
       var newFolderPath = p.join(parent.folderPath, folderName);
       var newFolder = NotesFolderFS(parent, newFolderPath, folderConfig);
@@ -466,6 +467,7 @@ class GitJournalRepo with ChangeNotifier {
   Future<void> removeFolder(NotesFolderFS folder) async {
     logEvent(Event.FolderDeleted);
 
+    final gitOpLock = RepositoryLock().gitOpLock;
     await gitOpLock.synchronized(() async {
       Log.d("Got removeFolder lock");
       Log.d("Removing Folder: " + folder.folderPath);
@@ -489,6 +491,7 @@ class GitJournalRepo with ChangeNotifier {
 
     logEvent(Event.FolderRenamed);
 
+    final gitOpLock = RepositoryLock().gitOpLock;
     await gitOpLock.synchronized(() async {
       var oldFolderPath = folder.folderPath;
       Log.d("Renaming Folder from $oldFolderPath -> $newFolderName");
@@ -527,6 +530,7 @@ class GitJournalRepo with ChangeNotifier {
       return fail(renameR);
     }
 
+    final gitOpLock = RepositoryLock().gitOpLock;
     var _ = await gitOpLock.synchronized(() async {
       Result<void> result = await renameGitNote(fromNote, toNote);
       if (result.isFailure) {
@@ -535,7 +539,9 @@ class GitJournalRepo with ChangeNotifier {
       }
 
       numChanges += 1;
-      notifyListeners();
+      // does not have any effect because _syncNotes also notifyListeners
+      // after complete
+      // notifyListeners();
     });
 
     unawaited(_syncNotes());
@@ -580,6 +586,8 @@ class GitJournalRepo with ChangeNotifier {
     var newNotes = <Note>[];
 
     logEvent(Event.NoteMoved);
+
+    final gitOpLock = RepositoryLock().gitOpLock;
     var r = await gitOpLock.synchronized(() async {
       Log.d("Got moveNote lock");
 
@@ -636,6 +644,7 @@ class GitJournalRepo with ChangeNotifier {
 
     note.parent.add(note);
 
+    final gitOpLock = RepositoryLock().gitOpLock;
     await gitOpLock.synchronized(() async {
       Log.d("Got addNote lock");
 
@@ -658,6 +667,7 @@ class GitJournalRepo with ChangeNotifier {
   Future<void> removeNotes(List<Note> notes) async {
     logEvent(Event.NoteDeleted);
 
+    final gitOpLock = RepositoryLock().gitOpLock;
     await gitOpLock.synchronized(() async {
       Log.d("Got removeNote lock");
 
@@ -687,6 +697,7 @@ class GitJournalRepo with ChangeNotifier {
   Future<void> undoRemoveNote(Note note) async {
     logEvent(Event.NoteUndoDeleted);
 
+    final gitOpLock = RepositoryLock().gitOpLock;
     await gitOpLock.synchronized(() async {
       Log.d("Got undoRemoveNote lock");
 
@@ -724,6 +735,7 @@ class GitJournalRepo with ChangeNotifier {
 
     newNote.parent.updateNote(newNote);
 
+    final gitOpLock = RepositoryLock().gitOpLock;
     await gitOpLock.synchronized(() async {
       Log.d("Got updateNote lock");
 
@@ -900,7 +912,7 @@ class GitJournalRepo with ChangeNotifier {
 
       var remoteName = branchConfig.remote;
       if (remoteName == null) {
-        throw Exception("Branch config for '$branchName' misdsing remote");
+        throw Exception("Branch config for '$branchName' missing remote");
       }
       var remoteBranch =
           await repo.remoteBranch(remoteName, branchName).getOrThrow();
