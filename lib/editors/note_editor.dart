@@ -5,15 +5,12 @@
  */
 
 import 'dart:async';
-
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'dart:developer';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:path/path.dart' as p;
-import 'package:provider/provider.dart';
-
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/image.dart' as core;
@@ -41,6 +38,8 @@ import 'package:gitjournal/widgets/folder_selection_dialog.dart';
 import 'package:gitjournal/widgets/note_delete_dialog.dart';
 import 'package:gitjournal/widgets/note_tag_editor.dart';
 import 'package:gitjournal/widgets/rename_dialog.dart';
+import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
 
 class ShowUndoSnackbar {}
 
@@ -335,7 +334,8 @@ class NoteEditorState extends State<NoteEditor>
 
   @override
   Future<void> exitEditorSelected(Note note) async {
-    assert(note.oid.isEmpty);
+    log('Exit Note oid: ${note.oid}');
+    // assert(note.oid.isEmpty);
 
     var saved = await _saveNote(note);
     if (saved && mounted) {
@@ -484,7 +484,7 @@ class NoteEditorState extends State<NoteEditor>
 
   // Returns bool indicating if the note was successfully saved
   Future<bool> _saveNote(Note note) async {
-    assert(note.oid.isEmpty);
+    // assert(note.oid.isEmpty);
 
     if (!_noteModified(note)) return true;
 
