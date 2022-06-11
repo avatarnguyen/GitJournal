@@ -31,6 +31,7 @@ import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/repository_lock.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/utils/result.dart';
 import 'package:gitjournal/utils/utils.dart';
@@ -40,6 +41,7 @@ import 'package:gitjournal/widgets/note_tag_editor.dart';
 import 'package:gitjournal/widgets/rename_dialog.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
+import 'package:universal_io/io.dart' as io;
 
 class ShowUndoSnackbar {}
 
@@ -374,10 +376,9 @@ class NoteEditorState extends State<NoteEditor>
         _newNoteRenamed = true;
       });
     } else {
-      var container = context.read<GitJournalRepo>();
-
       var originalNote = widget.existingNote!;
-      var renameResult = await container.renameNote(originalNote, newFileName);
+
+      Result<Note> renameResult = await rename(originalNote, newFileName);
       if (renameResult.isFailure) {
         await showAlertDialog(
           context,
@@ -421,6 +422,39 @@ class NoteEditorState extends State<NoteEditor>
         );
       }
     }
+  }
+
+  Future<Result<Note>> rename(Note originalNote, String newFileName) async {
+    assert(!newFileName.contains(p.separator));
+    assert(originalNote.oid.isNotEmpty);
+
+    var gitJournal = context.read<GitJournalRepo>();
+    var toNote = originalNote.copyWithFileName(newFileName);
+    if (io.File(toNote.fullFilePath).existsSync()) {
+      var ex = Exception('Destination Note exists');
+      return Result.fail(ex);
+    }
+    // var renameResult = await container.renameNote(originalNote, newFileName);
+
+    Result<void> renameR = gitJournal.renameLocalNote(originalNote, toNote);
+    if (renameR.isFailure) {
+      return fail(renameR);
+    }
+
+    final gitOpLock = RepositoryLock().gitOpLock;
+    var _ = await gitOpLock.synchronized(() async {
+      Result<void> result =
+          await gitJournal.renameGitNote(originalNote, toNote);
+      if (result.isFailure) {
+        Log.e("renameNote", result: result);
+        return fail(result);
+      }
+
+      gitJournal.increaseNumChanges();
+    });
+
+    gitJournal.syncNotesWithoutWaiting();
+    return Result(toNote);
   }
 
   @override

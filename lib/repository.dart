@@ -454,13 +454,13 @@ class GitJournalRepo with ChangeNotifier {
         return fail(result);
       }
 
-      numChanges += 1;
+      increaseNumChanges();
       notifyListeners();
       return Result(null);
     });
     if (r.isFailure) return fail(r);
 
-    unawaited(_syncNotes());
+    syncNotesWithoutWaiting();
     return Result(null);
   }
 
@@ -479,11 +479,11 @@ class GitJournalRepo with ChangeNotifier {
         return;
       }
 
-      numChanges += 1;
+      increaseNumChanges();
       notifyListeners();
     });
 
-    unawaited(_syncNotes());
+    syncNotesWithoutWaiting();
   }
 
   Future<void> renameFolder(NotesFolderFS folder, String newFolderName) async {
@@ -506,46 +506,54 @@ class GitJournalRepo with ChangeNotifier {
         return;
       }
 
-      numChanges += 1;
+      increaseNumChanges();
       notifyListeners();
     });
 
+    syncNotesWithoutWaiting();
+  }
+
+  // Future<Result<Note>> renameNote(Note fromNote, String newFileName) async {
+  // assert(!newFileName.contains(p.separator));
+  // assert(fromNote.oid.isNotEmpty);
+
+  // logEvent(Event.NoteRenamed);
+
+  // var toNote = fromNote.copyWithFileName(newFileName);
+  // if (io.File(toNote.fullFilePath).existsSync()) {
+  //   var ex = Exception('Destination Note exists');
+  //   return Result.fail(ex);
+  // }
+
+  // Result<void> renameR = renameLocalNote(fromNote, toNote);
+  // if (renameR.isFailure) {
+  //   return fail(renameR);
+  // }
+
+  // final gitOpLock = RepositoryLock().gitOpLock;
+  // var _ = await gitOpLock.synchronized(() async {
+  //   Result<void> result = await renameGitNote(fromNote, toNote);
+  //   if (result.isFailure) {
+  //     Log.e("renameNote", result: result);
+  //     return fail(result);
+  //   }
+  //
+  //   increaseNumChanges();
+  //   // does not have any effect because _syncNotes also notifyListeners
+  //   // after complete
+  //   // notifyListeners();
+  // });
+
+  // syncNotesWithoutWaiting();
+  // return Result(toNote);
+  // }
+
+  void syncNotesWithoutWaiting() {
     unawaited(_syncNotes());
   }
 
-  Future<Result<Note>> renameNote(Note fromNote, String newFileName) async {
-    assert(!newFileName.contains(p.separator));
-    assert(fromNote.oid.isNotEmpty);
-
-    logEvent(Event.NoteRenamed);
-
-    var toNote = fromNote.copyWithFileName(newFileName);
-    if (io.File(toNote.fullFilePath).existsSync()) {
-      var ex = Exception('Destination Note exists');
-      return Result.fail(ex);
-    }
-
-    Result<void> renameR = renameLocalNote(fromNote, toNote);
-    if (renameR.isFailure) {
-      return fail(renameR);
-    }
-
-    final gitOpLock = RepositoryLock().gitOpLock;
-    var _ = await gitOpLock.synchronized(() async {
-      Result<void> result = await renameGitNote(fromNote, toNote);
-      if (result.isFailure) {
-        Log.e("renameNote", result: result);
-        return fail(result);
-      }
-
-      numChanges += 1;
-      // does not have any effect because _syncNotes also notifyListeners
-      // after complete
-      // notifyListeners();
-    });
-
-    unawaited(_syncNotes());
-    return Result(toNote);
+  void increaseNumChanges() {
+    numChanges += 1;
   }
 
   Result<void> renameLocalNote(Note fromNote, Note toNote) {
@@ -614,13 +622,13 @@ class GitJournalRepo with ChangeNotifier {
         return fail(result);
       }
 
-      numChanges += 1;
+      increaseNumChanges();
       notifyListeners();
       return Result(null);
     });
     if (r.isFailure) return fail(r);
 
-    unawaited(_syncNotes());
+    syncNotesWithoutWaiting();
     return Result(newNotes);
   }
 
@@ -654,11 +662,11 @@ class GitJournalRepo with ChangeNotifier {
         return;
       }
 
-      numChanges += 1;
+      increaseNumChanges();
       notifyListeners();
     });
 
-    unawaited(_syncNotes());
+    syncNotesWithoutWaiting();
     return Result(note);
   }
 
@@ -681,7 +689,7 @@ class GitJournalRepo with ChangeNotifier {
         return;
       }
 
-      numChanges += 1;
+      increaseNumChanges();
       notifyListeners();
 
       // FIXME: Is there a way of figuring this amount dynamically?
@@ -691,7 +699,7 @@ class GitJournalRepo with ChangeNotifier {
       var _ = await Future.delayed(4.seconds);
     });
 
-    unawaited(_syncNotes());
+    syncNotesWithoutWaiting();
   }
 
   Future<void> undoRemoveNote(Note note) async {
@@ -712,7 +720,7 @@ class GitJournalRepo with ChangeNotifier {
       notifyListeners();
     });
 
-    unawaited(_syncNotes());
+    syncNotesWithoutWaiting();
   }
 
   Future<Result<Note>> updateNote(Note oldNote, Note newNote) async {
@@ -745,11 +753,11 @@ class GitJournalRepo with ChangeNotifier {
         return;
       }
 
-      numChanges += 1;
+      increaseNumChanges();
       notifyListeners();
     });
 
-    unawaited(_syncNotes());
+    syncNotesWithoutWaiting();
     return Result(newNote);
   }
 
