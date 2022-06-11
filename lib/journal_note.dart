@@ -23,7 +23,7 @@ class JournalNote {
     }
     // var renameResult = await container.renameNote(originalNote, newFileName);
 
-    Result<void> renameR = gitJournal.renameLocalNote(originalNote, toNote);
+    Result<void> renameR = renameLocalNote(originalNote, toNote);
     if (renameR.isFailure) {
       return fail(renameR);
     }
@@ -42,5 +42,10 @@ class JournalNote {
 
     gitJournal.syncNotesWithoutWaiting();
     return Result(toNote);
+  }
+
+  Result<void> renameLocalNote(Note fromNote, Note toNote) {
+    var renameR = fromNote.parent.renameNote(fromNote, toNote);
+    return renameR;
   }
 }

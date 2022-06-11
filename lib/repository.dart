@@ -556,11 +556,6 @@ class GitJournalRepo with ChangeNotifier {
     numChanges += 1;
   }
 
-  Result<void> renameLocalNote(Note fromNote, Note toNote) {
-    var renameR = fromNote.parent.renameNote(fromNote, toNote);
-    return renameR;
-  }
-
   Future<Result<void>> renameGitNote(Note fromNote, Note toNote) async {
     var result = await _gitRepo.renameNote(
       fromNote.filePath,
