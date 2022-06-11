@@ -1,10 +1,10 @@
 name: gitjournal
 description: A Note Taking App Built on top of Git
-version: 1.84.0+10
+version: 1.84.1+10
 
 environment:
   sdk: ">=2.14.0 <3.0.0"
-  flutter: ">=2.10.5"
+  flutter: ">=3.0.1"
 
 publish_to: none
 
@@ -78,13 +78,10 @@ dependencies:
   universal_io: ^2.0.4
   sprintf: ^6.0.0
   recase: ^4.0.0
-  supabase_flutter: ^0.2.5
+  supabase_flutter: ^0.3.1+1
   nested: ^1.0.0
   language_picker: ^0.4.1
-  flutter_login:
-    git:
-      url: https://github.com/NearHuscarl/flutter_login.git
-      ref: develop
+  flutter_login: ^3.2.0
   android_external_storage: ^0.1.0
   background_fetch: ^1.0.3
   timeline_tile: ^2.0.0
