@@ -40,6 +40,8 @@ import 'package:time/time.dart';
 import 'package:universal_io/io.dart' show Platform;
 import 'package:universal_io/io.dart' as io;
 
+final gitOpLock = Lock();
+
 class GitJournalRepo with ChangeNotifier {
   final RepositoryManager repoManager;
   final StorageConfig storageConfig;
@@ -50,7 +52,6 @@ class GitJournalRepo with ChangeNotifier {
   final FileStorage fileStorage;
   final FileStorageCache fileStorageCache;
 
-  final _gitOpLock = Lock();
   final _loadLock = Lock();
   final _networkLock = Lock();
   final _cacheBuildingLock = Lock();
@@ -377,7 +378,7 @@ class GitJournalRepo with ChangeNotifier {
 
       attempt.add(SyncStatus.Merging);
 
-      await _gitOpLock.synchronized(() async {
+      await gitOpLock.synchronized(() async {
         var r = await _gitRepo.merge();
         if (r.isFailure) {
           var ex = r.error!;
@@ -434,7 +435,7 @@ class GitJournalRepo with ChangeNotifier {
       NotesFolderFS parent, String folderName) async {
     logEvent(Event.FolderAdded);
 
-    var r = await _gitOpLock.synchronized(() async {
+    var r = await gitOpLock.synchronized(() async {
       var newFolderPath = p.join(parent.folderPath, folderName);
       var newFolder = NotesFolderFS(parent, newFolderPath, folderConfig);
       var r = newFolder.create();
@@ -465,7 +466,7 @@ class GitJournalRepo with ChangeNotifier {
   Future<void> removeFolder(NotesFolderFS folder) async {
     logEvent(Event.FolderDeleted);
 
-    await _gitOpLock.synchronized(() async {
+    await gitOpLock.synchronized(() async {
       Log.d("Got removeFolder lock");
       Log.d("Removing Folder: " + folder.folderPath);
 
@@ -488,7 +489,7 @@ class GitJournalRepo with ChangeNotifier {
 
     logEvent(Event.FolderRenamed);
 
-    await _gitOpLock.synchronized(() async {
+    await gitOpLock.synchronized(() async {
       var oldFolderPath = folder.folderPath;
       Log.d("Renaming Folder from $oldFolderPath -> $newFolderName");
       folder.rename(newFolderName);
@@ -526,7 +527,7 @@ class GitJournalRepo with ChangeNotifier {
       return fail(renameR);
     }
 
-    var _ = await _gitOpLock.synchronized(() async {
+    var _ = await gitOpLock.synchronized(() async {
       Result<void> result = await renameGitNote(fromNote, toNote);
       if (result.isFailure) {
         Log.e("renameNote", result: result);
@@ -579,7 +580,7 @@ class GitJournalRepo with ChangeNotifier {
     var newNotes = <Note>[];
 
     logEvent(Event.NoteMoved);
-    var r = await _gitOpLock.synchronized(() async {
+    var r = await gitOpLock.synchronized(() async {
       Log.d("Got moveNote lock");
 
       var oldPaths = <String>[];
@@ -635,7 +636,7 @@ class GitJournalRepo with ChangeNotifier {
 
     note.parent.add(note);
 
-    await _gitOpLock.synchronized(() async {
+    await gitOpLock.synchronized(() async {
       Log.d("Got addNote lock");
 
       var result = await _gitRepo.addNote(note);
@@ -657,7 +658,7 @@ class GitJournalRepo with ChangeNotifier {
   Future<void> removeNotes(List<Note> notes) async {
     logEvent(Event.NoteDeleted);
 
-    await _gitOpLock.synchronized(() async {
+    await gitOpLock.synchronized(() async {
       Log.d("Got removeNote lock");
 
       // FIXME: What if the Note hasn't yet been saved?
@@ -686,7 +687,7 @@ class GitJournalRepo with ChangeNotifier {
   Future<void> undoRemoveNote(Note note) async {
     logEvent(Event.NoteUndoDeleted);
 
-    await _gitOpLock.synchronized(() async {
+    await gitOpLock.synchronized(() async {
       Log.d("Got undoRemoveNote lock");
 
       note.parent.add(note);
@@ -723,7 +724,7 @@ class GitJournalRepo with ChangeNotifier {
 
     newNote.parent.updateNote(newNote);
 
-    await _gitOpLock.synchronized(() async {
+    await gitOpLock.synchronized(() async {
       Log.d("Got updateNote lock");
 
       var result = await _gitRepo.updateNote(newNote);
