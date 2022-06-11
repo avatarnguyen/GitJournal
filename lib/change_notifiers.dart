@@ -10,6 +10,7 @@ import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/views/inline_tags_view.dart';
 import 'package:gitjournal/core/views/note_links_view.dart';
 import 'package:gitjournal/core/views/summary_view.dart';
+import 'package:gitjournal/journal_note.dart';
 import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/app_config.dart';
@@ -75,12 +76,15 @@ class GitJournalChangeNotifiers extends StatelessWidget {
     debugPrint('Build Repo Dependencies: $repo '
         '++++++++++++++++++++++++++++++++++\n');
 
+    final journalNote = JournalNote(repo);
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<GitConfig>.value(value: repo.gitConfig),
         ChangeNotifierProvider<StorageConfig>.value(value: repo.storageConfig),
         ChangeNotifierProvider<Settings>.value(value: repo.settings),
         ChangeNotifierProvider<NotesFolderConfig>.value(value: folderConfig),
+        Provider<JournalNote>.value(value: journalNote),
       ],
       child: _buildNoteMaterializedViews(
         repo,
