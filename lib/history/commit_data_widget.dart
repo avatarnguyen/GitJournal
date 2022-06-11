@@ -6,14 +6,12 @@
 
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-
 import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/diff_commit.dart';
 import 'package:dart_git/plumbing/git_hash.dart';
 import 'package:dart_git/plumbing/objects/blob.dart';
-
+import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:gitjournal/logger/logger.dart';
 
 class CommitDataWidget extends StatefulWidget {
