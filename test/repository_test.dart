@@ -45,55 +45,55 @@ Future<void> main() async {
     // baseDir.deleteSync(recursive: true);
   });
 
-  test('Rename Note - Same Folder', () async {
-    await _setup();
-    var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
-    print('Note: $note');
+  // test('Rename Note - Same Folder', () async {
+  //   await _setup();
+  //   var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
+  //   print('Note: $note');
+  //
+  //   var newPath = "1_new.md";
+  //   var newNote = await repo.renameNote(note, newPath).getOrThrow();
+  //   print('New Note: $newNote');
+  //
+  //   expect(newNote.filePath, newPath);
+  //   expect(newNote.fileFormat, NoteFileFormat.Markdown);
+  //   expect(repo.rootFolder.getAllNotes().length, 3);
+  //
+  //   var gitRepo = GitRepository.load(repoPath).getOrThrow();
+  //
+  //   var gitHash = gitRepo.headHash().getOrThrow();
+  //   print('Git Repo Hash: $gitHash');
+  //   expect(gitHash, isNot(headHash));
+  //
+  //   var headCommit = gitRepo.headCommit().getOrThrow();
+  //   print('Head Commit: $headCommit');
+  //   expect(headCommit.parents.length, 1);
+  //   expect(headCommit.parents[0], headHash);
+  // });
 
-    var newPath = "1_new.md";
-    var newNote = await repo.renameNote(note, newPath).getOrThrow();
-    print('New Note: $newNote');
+  // test('Rename Note - Change File Type', () async {
+  //   await _setup();
+  //   var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
+  //
+  //   var newPath = "1_new.txt";
+  //   var newNote = await repo.renameNote(note, newPath).getOrThrow();
+  //
+  //   expect(newNote.filePath, newPath);
+  //   expect(newNote.fileFormat, NoteFileFormat.Txt);
+  //   expect(repo.rootFolder.getAllNotes().length, 3);
+  // });
 
-    expect(newNote.filePath, newPath);
-    expect(newNote.fileFormat, NoteFileFormat.Markdown);
-    expect(repo.rootFolder.getAllNotes().length, 3);
-
-    var gitRepo = GitRepository.load(repoPath).getOrThrow();
-
-    var gitHash = gitRepo.headHash().getOrThrow();
-    print('Git Repo Hash: $gitHash');
-    expect(gitHash, isNot(headHash));
-
-    var headCommit = gitRepo.headCommit().getOrThrow();
-    print('Head Commit: $headCommit');
-    expect(headCommit.parents.length, 1);
-    expect(headCommit.parents[0], headHash);
-  });
-
-  test('Rename Note - Change File Type', () async {
-    await _setup();
-    var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
-
-    var newPath = "1_new.txt";
-    var newNote = await repo.renameNote(note, newPath).getOrThrow();
-
-    expect(newNote.filePath, newPath);
-    expect(newNote.fileFormat, NoteFileFormat.Txt);
-    expect(repo.rootFolder.getAllNotes().length, 3);
-  });
-
-  test('Rename Note - Destination Exists', () async {
-    await _setup();
-    var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
-
-    var newPath = "2.md";
-    var result = await repo.renameNote(note, newPath);
-    expect(result.isFailure, true);
-    expect(result.error, isA<Exception>());
-
-    var gitRepo = GitRepository.load(repoPath).getOrThrow();
-    expect(gitRepo.headHash().getOrThrow(), headHash);
-  });
+  // test('Rename Note - Destination Exists', () async {
+  //   await _setup();
+  //   var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
+  //
+  //   var newPath = "2.md";
+  //   var result = await repo.renameNote(note, newPath);
+  //   expect(result.isFailure, true);
+  //   expect(result.error, isA<Exception>());
+  //
+  //   var gitRepo = GitRepository.load(repoPath).getOrThrow();
+  //   expect(gitRepo.headHash().getOrThrow(), headHash);
+  // });
 
   test('updateNote - Basic', () async {
     await _setup();
