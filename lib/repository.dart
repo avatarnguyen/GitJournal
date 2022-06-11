@@ -66,6 +66,8 @@ class GitJournalRepo with ChangeNotifier {
   late final NotesCache _notesCache;
   late final NotesFolderFS rootFolder;
 
+  GitNoteRepository get gitRepo => _gitRepo;
+
   //
   // Mutable stuff
   //
@@ -554,14 +556,6 @@ class GitJournalRepo with ChangeNotifier {
 
   void increaseNumChanges() {
     numChanges += 1;
-  }
-
-  Future<Result<void>> renameGitNote(Note fromNote, Note toNote) async {
-    var result = await _gitRepo.renameNote(
-      fromNote.filePath,
-      toNote.filePath,
-    );
-    return result;
   }
 
   Future<Result<Note>> moveNote(Note note, NotesFolderFS destFolder) async {

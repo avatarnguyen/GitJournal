@@ -11,6 +11,7 @@ import 'package:gitjournal/core/views/inline_tags_view.dart';
 import 'package:gitjournal/core/views/note_links_view.dart';
 import 'package:gitjournal/core/views/summary_view.dart';
 import 'package:gitjournal/journal_note.dart';
+import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/app_config.dart';
@@ -76,7 +77,8 @@ class GitJournalChangeNotifiers extends StatelessWidget {
     debugPrint('Build Repo Dependencies: $repo '
         '++++++++++++++++++++++++++++++++++\n');
 
-    final journalNote = JournalNote(repo);
+    Log.d('Git Note Repo: ${repo.gitRepo.hashCode}');
+    final journalNote = JournalNote(repo, repo.gitRepo);
 
     return MultiProvider(
       providers: [
