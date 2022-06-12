@@ -80,7 +80,7 @@ void main() {
       expect(repo.rootFolder.getAllNotes().length, 3);
     });
 
-    test('Rename Note - Destination Exists', () async {
+    test('should throw exception if destination exists', () async {
       var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
 
       var newPath = "2.md";
