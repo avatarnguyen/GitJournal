@@ -8,7 +8,6 @@ import 'dart:io' as io;
 
 import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/plumbing/git_hash.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/notes/note.dart';
 import 'package:gitjournal/repository.dart';
@@ -45,40 +44,40 @@ Future<void> main() async {
     // baseDir.deleteSync(recursive: true);
   });
 
-  test('updateNote - Basic', () async {
-    await _setup();
-    var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
-
-    var toNote = note.resetOid();
-    toNote = toNote.copyWith(body: '11');
-    toNote = await repo.updateNote(note, toNote).getOrThrow();
-
-    var gitRepo = GitRepository.load(repoPath).getOrThrow();
-    expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
-
-    var headCommit = gitRepo.headCommit().getOrThrow();
-    expect(headCommit.parents.length, 1);
-    expect(headCommit.parents[0], headHash);
-
-    var contents = io.File(toNote.fullFilePath).readAsStringSync();
-    expect(contents, '11\n');
-  });
-
-  test('updateNote - Fails', () async {
-    await _setup();
-    var note = repo.rootFolder.getNoteWithSpec('f1/3.md')!;
-
-    var toNote = note.resetOid();
-    toNote = toNote.copyWith(body: "doesn't matter");
-    io.Directory(note.parent.fullFolderPath).deleteSync(recursive: true);
-
-    var result = await repo.updateNote(note, toNote);
-    expect(result.isFailure, true);
-    expect(result.error, isA<Exception>());
-
-    var gitRepo = GitRepository.load(repoPath).getOrThrow();
-    expect(gitRepo.headHash().getOrThrow(), headHash);
-  });
+  // test('updateNote - Basic', () async {
+  //   await _setup();
+  //   var note = repo.rootFolder.notes.firstWhere((n) => n.fileName == '1.md');
+  //
+  //   var toNote = note.resetOid();
+  //   toNote = toNote.copyWith(body: '11');
+  //   toNote = await repo.updateNote(note, toNote).getOrThrow();
+  //
+  //   var gitRepo = GitRepository.load(repoPath).getOrThrow();
+  //   expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+  //
+  //   var headCommit = gitRepo.headCommit().getOrThrow();
+  //   expect(headCommit.parents.length, 1);
+  //   expect(headCommit.parents[0], headHash);
+  //
+  //   var contents = io.File(toNote.fullFilePath).readAsStringSync();
+  //   expect(contents, '11\n');
+  // });
+  //
+  // test('updateNote - Fails', () async {
+  //   await _setup();
+  //   var note = repo.rootFolder.getNoteWithSpec('f1/3.md')!;
+  //
+  //   var toNote = note.resetOid();
+  //   toNote = toNote.copyWith(body: "doesn't matter");
+  //   io.Directory(note.parent.fullFolderPath).deleteSync(recursive: true);
+  //
+  //   var result = await repo.updateNote(note, toNote);
+  //   expect(result.isFailure, true);
+  //   expect(result.error, isA<Exception>());
+  //
+  //   var gitRepo = GitRepository.load(repoPath).getOrThrow();
+  //   expect(gitRepo.headHash().getOrThrow(), headHash);
+  // });
 
   test('addNote - Basic', () async {
     await _setup();
@@ -128,7 +127,6 @@ Future<void> main() async {
 
     await setupFixture(p.join(extDir.path, "test_data"), headHash);
     await _setup(sharedPrefValues: pref);
-
     var note = repo.rootFolder.getNoteWithSpec('1.md')!;
     io.File(note.fullFilePath).writeAsStringSync('foo');
 
@@ -153,26 +151,26 @@ Future<void> main() async {
     expect(headCommit.parents[0], headHash);
   });
 
-  test('updateNote - created metadata stays the same', () async {
-    var headHash = GitHash('38e8c9150c0c004c9f72221ac7c19cf770575545');
-    await _setup(head: headHash);
-
-    var note = repo.rootFolder.getNoteWithSpec('doc.md')!;
-    var toNote = note.resetOid();
-
-    expect(toNote.created, note.created);
-    toNote = await repo.updateNote(note, toNote).getOrThrow();
-
-    var gitRepo = GitRepository.load(repoPath).getOrThrow();
-    expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
-
-    var headCommit = gitRepo.headCommit().getOrThrow();
-    expect(headCommit.parents.length, 1);
-    expect(headCommit.parents[0], headHash);
-
-    expect(toNote.created, note.created);
-    expect(toNote.modified.isAfter(note.modified), true);
-  });
+  // test('updateNote - created metadata stays the same', () async {
+  //   var headHash = GitHash('38e8c9150c0c004c9f72221ac7c19cf770575545');
+  //   await _setup(head: headHash);
+  //
+  //   var note = repo.rootFolder.getNoteWithSpec('doc.md')!;
+  //   var toNote = note.resetOid();
+  //
+  //   expect(toNote.created, note.created);
+  //   toNote = await repo.updateNote(note, toNote).getOrThrow();
+  //
+  //   var gitRepo = GitRepository.load(repoPath).getOrThrow();
+  //   expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+  //
+  //   var headCommit = gitRepo.headCommit().getOrThrow();
+  //   expect(headCommit.parents.length, 1);
+  //   expect(headCommit.parents[0], headHash);
+  //
+  //   expect(toNote.created, note.created);
+  //   expect(toNote.modified.isAfter(note.modified), true);
+  // });
 
   test('Move - Note from root to Folder', () async {
     await _setup();
@@ -276,29 +274,29 @@ Future<void> main() async {
     expect(root.getNoteWithSpec('f2/3.md'), isNotNull);
   });
 
-  test('Add a tag', () async {
-    var headHash = GitHash('7fc65b59170bdc91013eb56cdc65fa3307f2e7de');
-    await _setup(head: headHash);
-
-    var note = repo.rootFolder.getNoteWithSpec('doc.md')!;
-    var updatedNote = note.resetOid();
-    updatedNote = updatedNote.copyWith(tags: {"Foo"}.lock);
-
-    var r = await repo.updateNote(note, updatedNote);
-    expect(r.isSuccess, true);
-    expect(r.isFailure, false);
-
-    var note2 = r.getOrThrow();
-    expect(note2.tags, {"Foo"});
-    expect(note2.data.props.containsKey("tags"), true);
-
-    var gitRepo = GitRepository.load(repoPath).getOrThrow();
-    expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
-
-    var headCommit = gitRepo.headCommit().getOrThrow();
-    expect(headCommit.parents.length, 1);
-    expect(headCommit.parents[0], headHash);
-  });
+  // test('Add a tag', () async {
+  //   var headHash = GitHash('7fc65b59170bdc91013eb56cdc65fa3307f2e7de');
+  //   await _setup(head: headHash);
+  //
+  //   var note = repo.rootFolder.getNoteWithSpec('doc.md')!;
+  //   var updatedNote = note.resetOid();
+  //   updatedNote = updatedNote.copyWith(tags: {"Foo"}.lock);
+  //
+  //   var r = await repo.updateNote(note, updatedNote);
+  //   expect(r.isSuccess, true);
+  //   expect(r.isFailure, false);
+  //
+  //   var note2 = r.getOrThrow();
+  //   expect(note2.tags, {"Foo"});
+  //   expect(note2.data.props.containsKey("tags"), true);
+  //
+  //   var gitRepo = GitRepository.load(repoPath).getOrThrow();
+  //   expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+  //
+  //   var headCommit = gitRepo.headCommit().getOrThrow();
+  //   expect(headCommit.parents.length, 1);
+  //   expect(headCommit.parents[0], headHash);
+  // });
 
   test('Create folder', () async {
     await _setup();

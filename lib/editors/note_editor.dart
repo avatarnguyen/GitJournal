@@ -493,6 +493,8 @@ class NoteEditorState extends State<NoteEditor>
     Log.d("Note modified - saving");
     try {
       var repo = context.read<GitJournalRepo>();
+      final journalNote = context.read<JournalNote>();
+
       if (_isNewNote && !_newNoteRenamed) {
         if (note.shouldRebuildPath) {
           Log.d("Rebuilding Note's FileName");
@@ -505,7 +507,8 @@ class NoteEditorState extends State<NoteEditor>
       } else {
         var originalNote = widget.existingNote!;
         var modifiedNote =
-            await repo.updateNote(originalNote, note).getOrThrow();
+            await journalNote.update(originalNote, note).getOrThrow();
+        Log.d(' --------- From: $originalNote /nTo: $modifiedNote --------- ');
         if (!mounted) return false;
         setState(() {
           _note = modifiedNote;

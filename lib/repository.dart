@@ -712,43 +712,43 @@ class GitJournalRepo with ChangeNotifier {
     syncNotesWithoutWaiting();
   }
 
-  Future<Result<Note>> updateNote(Note oldNote, Note newNote) async {
-    assert(oldNote.oid.isNotEmpty);
-    assert(newNote.oid.isEmpty);
-
-    logEvent(Event.NoteUpdated);
-
-    assert(oldNote.filePath == newNote.filePath);
-    assert(oldNote.parent == newNote.parent);
-
-    newNote = newNote.updateModified();
-
-    var r = await NoteStorage.save(newNote);
-    if (r.isFailure) {
-      Log.e("Note saving failed", ex: r.error, stacktrace: r.stackTrace);
-      return fail(r);
-    }
-    newNote = r.getOrThrow();
-
-    newNote.parent.updateNote(newNote);
-
-    final gitOpLock = RepositoryLock().gitOpLock;
-    await gitOpLock.synchronized(() async {
-      Log.d("Got updateNote lock");
-
-      var result = await _gitRepo.updateNote(newNote);
-      if (result.isFailure) {
-        Log.e("updateNote", result: result);
-        return;
-      }
-
-      increaseNumChanges();
-      notifyListeners();
-    });
-
-    syncNotesWithoutWaiting();
-    return Result(newNote);
-  }
+  // Future<Result<Note>> updateNote(Note oldNote, Note newNote) async {
+  //   assert(oldNote.oid.isNotEmpty);
+  //   assert(newNote.oid.isEmpty);
+  //
+  //   logEvent(Event.NoteUpdated);
+  //
+  //   assert(oldNote.filePath == newNote.filePath);
+  //   assert(oldNote.parent == newNote.parent);
+  //
+  //   newNote = newNote.updateModified();
+  //
+  //   var r = await NoteStorage.save(newNote);
+  //   if (r.isFailure) {
+  //     Log.e("Note saving failed", ex: r.error, stacktrace: r.stackTrace);
+  //     return fail(r);
+  //   }
+  //   newNote = r.getOrThrow();
+  //
+  //   newNote.parent.updateNote(newNote);
+  //
+  //   final gitOpLock = RepositoryLock().gitOpLock;
+  //   await gitOpLock.synchronized(() async {
+  //     Log.d("Got updateNote lock");
+  //
+  //     var result = await _gitRepo.updateNote(newNote);
+  //     if (result.isFailure) {
+  //       Log.e("updateNote", result: result);
+  //       return;
+  //     }
+  //
+  //     increaseNumChanges();
+  //     notifyListeners();
+  //   });
+  //
+  //   syncNotesWithoutWaiting();
+  //   return Result(newNote);
+  // }
 
   Future<void> completeGitHostSetup(
       String repoFolderName, String remoteName) async {
