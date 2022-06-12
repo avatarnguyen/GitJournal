@@ -8,8 +8,6 @@ import 'dart:io' as io;
 
 import 'package:dart_git/dart_git.dart';
 import 'package:dart_git/plumbing/git_hash.dart';
-import 'package:gitjournal/core/note.dart';
-import 'package:gitjournal/core/notes/note.dart';
 import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:path/path.dart' as p;
@@ -79,44 +77,44 @@ Future<void> main() async {
   //   expect(gitRepo.headHash().getOrThrow(), headHash);
   // });
 
-  test('addNote - Basic', () async {
-    await _setup();
-    var note = Note.newNote(
-      repo.rootFolder,
-      fileFormat: NoteFileFormat.Markdown,
-    );
-
-    note = note.copyWith(body: '7');
-    note = note.copyWithFileName('7.md');
-    note = await repo.addNote(note).getOrThrow();
-
-    var gitRepo = GitRepository.load(repoPath).getOrThrow();
-    expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
-
-    var headCommit = gitRepo.headCommit().getOrThrow();
-    expect(headCommit.parents.length, 1);
-    expect(headCommit.parents[0], headHash);
-
-    var contents = io.File(note.fullFilePath).readAsStringSync();
-    expect(contents.contains('7\n'), true);
-  });
-
-  test('addNote - Fails', () async {
-    await _setup();
-    var folder = repo.rootFolder.getFolderWithSpec('f1')!;
-    var note = Note.newNote(folder, fileFormat: NoteFileFormat.Markdown);
-
-    note = note.copyWith(body: '7');
-    note = note.copyWithFileName('7.md');
-
-    io.Directory(folder.fullFolderPath).deleteSync(recursive: true);
-    var result = await repo.addNote(note);
-    expect(result.isFailure, true);
-    expect(result.error, isA<Exception>());
-
-    var gitRepo = GitRepository.load(repoPath).getOrThrow();
-    expect(gitRepo.headHash().getOrThrow(), headHash);
-  });
+  // test('addNote - Basic', () async {
+  //   await _setup();
+  //   var note = Note.newNote(
+  //     repo.rootFolder,
+  //     fileFormat: NoteFileFormat.Markdown,
+  //   );
+  //
+  //   note = note.copyWith(body: '7');
+  //   note = note.copyWithFileName('7.md');
+  //   note = await repo.addNote(note).getOrThrow();
+  //
+  //   var gitRepo = GitRepository.load(repoPath).getOrThrow();
+  //   expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+  //
+  //   var headCommit = gitRepo.headCommit().getOrThrow();
+  //   expect(headCommit.parents.length, 1);
+  //   expect(headCommit.parents[0], headHash);
+  //
+  //   var contents = io.File(note.fullFilePath).readAsStringSync();
+  //   expect(contents.contains('7\n'), true);
+  // });
+  //
+  // test('addNote - Fails', () async {
+  //   await _setup();
+  //   var folder = repo.rootFolder.getFolderWithSpec('f1')!;
+  //   var note = Note.newNote(folder, fileFormat: NoteFileFormat.Markdown);
+  //
+  //   note = note.copyWith(body: '7');
+  //   note = note.copyWithFileName('7.md');
+  //
+  //   io.Directory(folder.fullFolderPath).deleteSync(recursive: true);
+  //   var result = await repo.addNote(note);
+  //   expect(result.isFailure, true);
+  //   expect(result.error, isA<Exception>());
+  //
+  //   var gitRepo = GitRepository.load(repoPath).getOrThrow();
+  //   expect(gitRepo.headHash().getOrThrow(), headHash);
+  // });
 
   test('Outside Changes', () async {
     var extDir = await io.Directory.systemTemp.createTemp();

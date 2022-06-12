@@ -109,4 +109,37 @@ class JournalNote {
     syncNotes();
     return Result(modifiedNote);
   }
+
+  Future<Result<Note>> addNote(Note note) async {
+    assert(note.oid.isEmpty);
+    logEvent(Event.NoteAdded);
+
+    note = note.updateModified();
+
+    var storageResult = await NoteStorage.save(note);
+    if (storageResult.isFailure) {
+      Log.e("Note saving failed",
+          ex: storageResult.error, stacktrace: storageResult.stackTrace);
+      return fail(storageResult);
+    }
+    note = storageResult.getOrThrow();
+
+    note.parent.add(note);
+
+    final gitOpLock = RepositoryLock().gitOpLock;
+    await gitOpLock.synchronized(() async {
+      Log.d("Got addNote lock");
+
+      var result = await gitNoteRepo.addNote(note);
+      if (result.isFailure) {
+        Log.e("addNote", result: result);
+        return;
+      }
+
+      increaseNumChanges();
+    });
+
+    syncNotes();
+    return Result(note);
+  }
 }

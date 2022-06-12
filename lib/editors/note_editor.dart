@@ -503,7 +503,7 @@ class NoteEditorState extends State<NoteEditor>
             _note = note;
           });
         }
-        await repo.addNote(note).throwOnError();
+        await journalNote.addNote(note).throwOnError();
       } else {
         var originalNote = widget.existingNote!;
         var modifiedNote =
