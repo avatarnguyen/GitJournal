@@ -37,7 +37,6 @@ import 'package:path/path.dart' as p;
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:time/time.dart';
 import 'package:universal_io/io.dart' show Platform;
 import 'package:universal_io/io.dart' as io;
 
@@ -659,57 +658,61 @@ class GitJournalRepo with ChangeNotifier {
   //   return Result(note);
   // }
 
-  void removeNote(Note note) => removeNotes([note]);
+  // void removeNote(Note note) => removeNotes([note]);
+  //
+  // Future<void> removeNotes(List<Note> notes) async {
+  //   logEvent(Event.NoteDeleted);
+  //
+  //   final gitOpLock = RepositoryLock().gitOpLock;
+  //   await gitOpLock.synchronized(() async {
+  //     Log.d("Got removeNote lock");
+  //
+  //     // FIXME: What if the Note hasn't yet been saved?
+  //     for (var note in notes) {
+  //       note.parent.remove(note);
+  //     }
+  //     var result = await _gitRepo.removeNotes(notes);
+  //     if (result.isFailure) {
+  //       Log.e("removeNotes", result: result);
+  //       return;
+  //     }
+  //
+  //     increaseNumChanges();
+  //     notifyListeners();
+  //
+  //     // FIXME: Is there a way of figuring this amount dynamically?
+  //     // The '4 seconds' is taken from snack_bar.dart -> _kSnackBarDisplayDuration
+  //     // We wait an aritfical amount of time, so that the user has a chance to undo
+  //     // their delete operation, and that commit is not synced with the server, till then.
+  //     var _ = await Future.delayed(4.seconds);
+  //   });
+  //
+  //   syncNotesWithoutWaiting();
+  // }
 
-  Future<void> removeNotes(List<Note> notes) async {
-    logEvent(Event.NoteDeleted);
+  // Future<void> undoRemoveNote(Note note) async {
+  //   logEvent(Event.NoteUndoDeleted);
+  //
+  //   final gitOpLock = RepositoryLock().gitOpLock;
+  //   await gitOpLock.synchronized(() async {
+  //     Log.d("Got undoRemoveNote lock");
+  //
+  //     note.parent.add(note);
+  //     var result = await _gitRepo.resetLastCommit();
+  //     if (result.isFailure) {
+  //       Log.e("undoRemoveNote", result: result);
+  //       return;
+  //     }
+  //
+  //     decreaseNumChanges();
+  //     notifyListeners();
+  //   });
+  //
+  //   syncNotesWithoutWaiting();
+  // }
 
-    final gitOpLock = RepositoryLock().gitOpLock;
-    await gitOpLock.synchronized(() async {
-      Log.d("Got removeNote lock");
-
-      // FIXME: What if the Note hasn't yet been saved?
-      for (var note in notes) {
-        note.parent.remove(note);
-      }
-      var result = await _gitRepo.removeNotes(notes);
-      if (result.isFailure) {
-        Log.e("removeNotes", result: result);
-        return;
-      }
-
-      increaseNumChanges();
-      notifyListeners();
-
-      // FIXME: Is there a way of figuring this amount dynamically?
-      // The '4 seconds' is taken from snack_bar.dart -> _kSnackBarDisplayDuration
-      // We wait an aritfical amount of time, so that the user has a chance to undo
-      // their delete operation, and that commit is not synced with the server, till then.
-      var _ = await Future.delayed(4.seconds);
-    });
-
-    syncNotesWithoutWaiting();
-  }
-
-  Future<void> undoRemoveNote(Note note) async {
-    logEvent(Event.NoteUndoDeleted);
-
-    final gitOpLock = RepositoryLock().gitOpLock;
-    await gitOpLock.synchronized(() async {
-      Log.d("Got undoRemoveNote lock");
-
-      note.parent.add(note);
-      var result = await _gitRepo.resetLastCommit();
-      if (result.isFailure) {
-        Log.e("undoRemoveNote", result: result);
-        return;
-      }
-
-      numChanges -= 1;
-      notifyListeners();
-    });
-
-    syncNotesWithoutWaiting();
+  void decreaseNumChanges() {
+    numChanges -= 1;
   }
 
   // Future<Result<Note>> updateNote(Note oldNote, Note newNote) async {

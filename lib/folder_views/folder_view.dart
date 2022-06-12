@@ -4,13 +4,10 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
-
-import 'package:easy_localization/easy_localization.dart';
 import 'package:git_bindings/git_bindings.dart';
-import 'package:provider/provider.dart';
-
 import 'package:gitjournal/analytics/analytics.dart';
 import 'package:gitjournal/app_router.dart';
 import 'package:gitjournal/core/folder/filtered_notes_folder.dart';
@@ -25,6 +22,7 @@ import 'package:gitjournal/editors/note_editor.dart';
 import 'package:gitjournal/folder_views/common.dart';
 import 'package:gitjournal/folder_views/standard_view.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
+import 'package:gitjournal/journal_note.dart';
 import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/settings/widgets/settings_header.dart';
@@ -37,6 +35,7 @@ import 'package:gitjournal/widgets/note_delete_dialog.dart';
 import 'package:gitjournal/widgets/note_search_delegate.dart';
 import 'package:gitjournal/widgets/sorting_mode_selector.dart';
 import 'package:gitjournal/widgets/sync_button.dart';
+import 'package:provider/provider.dart';
 
 enum DropDownChoices {
   SortingOptions,
@@ -627,8 +626,10 @@ class _FolderViewState extends State<FolderView> {
           true;
     }
     if (shouldDelete == true) {
-      var repo = context.read<GitJournalRepo>();
-      repo.removeNotes(_selectedNotes);
+      // var repo = context.read<GitJournalRepo>();
+      final journalNote = context.read<JournalNote>();
+
+      journalNote.removeNotes(_selectedNotes);
     }
 
     _resetSelection();

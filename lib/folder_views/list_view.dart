@@ -5,16 +5,15 @@
  */
 
 import 'package:flutter/material.dart';
-
-import 'package:provider/provider.dart';
-
 import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/notes/note.dart';
-import 'package:gitjournal/repository.dart';
+import 'package:gitjournal/journal_note.dart';
 import 'package:gitjournal/settings/settings.dart';
 import 'package:gitjournal/utils/utils.dart';
 import 'package:gitjournal/widgets/icon_dismissable.dart';
+import 'package:provider/provider.dart';
+
 import 'empty_text_sliver.dart';
 
 typedef NoteTileBuilder = Widget Function(
@@ -166,10 +165,12 @@ class _FolderListViewState extends State<FolderListView> {
         onDismissed: (direction) {
           _deletedViaDismissed.add(note.filePath);
 
-          var stateContainer = context.read<GitJournalRepo>();
-          stateContainer.removeNote(note);
+          // var stateContainer = context.read<GitJournalRepo>();
+          final journalNote = context.read<JournalNote>();
 
-          var snackBar = buildUndoDeleteSnackbar(stateContainer, note);
+          journalNote.remove(note);
+
+          var snackBar = buildUndoDeleteSnackbar(journalNote, note);
           ScaffoldMessenger.of(context)
             ..removeCurrentSnackBar()
             ..showSnackBar(snackBar);

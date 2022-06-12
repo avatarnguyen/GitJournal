@@ -5,10 +5,6 @@
  */
 
 import 'package:flutter/material.dart';
-
-import 'package:path/path.dart' as p;
-import 'package:provider/provider.dart';
-
 import 'package:gitjournal/app_router.dart';
 import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
@@ -19,9 +15,12 @@ import 'package:gitjournal/folder_views/calendar_view.dart';
 import 'package:gitjournal/folder_views/card_view.dart';
 import 'package:gitjournal/folder_views/grid_view.dart';
 import 'package:gitjournal/folder_views/journal_view.dart';
+import 'package:gitjournal/journal_note.dart';
 import 'package:gitjournal/logger/logger.dart';
-import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/utils/utils.dart';
+import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
+
 import 'common_types.dart';
 import 'standard_view.dart';
 
@@ -109,8 +108,8 @@ Future<void> openNoteEditor(
   if (showUndoSnackBar != null) {
     Log.d("Showing an undo snackbar");
 
-    var stateContainer = context.read<GitJournalRepo>();
-    var snackBar = buildUndoDeleteSnackbar(stateContainer, note);
+    var journalNote = context.read<JournalNote>();
+    var snackBar = buildUndoDeleteSnackbar(journalNote, note);
     ScaffoldMessenger.of(context)
       ..removeCurrentSnackBar()
       ..showSnackBar(snackBar);

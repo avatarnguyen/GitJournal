@@ -444,8 +444,10 @@ class NoteEditorState extends State<NoteEditor>
     }
     if (shouldDelete == true) {
       if (!_isNewNote) {
-        var stateContainer = context.read<GitJournalRepo>();
-        stateContainer.removeNote(note);
+        // var stateContainer = context.read<GitJournalRepo>();
+        final journalNote = context.read<JournalNote>();
+
+        journalNote.remove(note);
       }
 
       if (_isNewNote) {
@@ -492,7 +494,7 @@ class NoteEditorState extends State<NoteEditor>
 
     Log.d("Note modified - saving");
     try {
-      var repo = context.read<GitJournalRepo>();
+      // var repo = context.read<GitJournalRepo>();
       final journalNote = context.read<JournalNote>();
 
       if (_isNewNote && !_newNoteRenamed) {

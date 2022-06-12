@@ -7,6 +7,7 @@ import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/repository_lock.dart';
 import 'package:path/path.dart' as path;
+import 'package:time/time.dart';
 import 'package:universal_io/io.dart' as io;
 
 class JournalNote {
@@ -53,6 +54,10 @@ class JournalNote {
 
   void increaseNumChanges() {
     gitJournal.increaseNumChanges();
+  }
+
+  void decreaseNumChanges() {
+    gitJournal.decreaseNumChanges();
   }
 
   Result<void> renameLocalNote(Note fromNote, Note toNote) {
@@ -141,5 +146,56 @@ class JournalNote {
 
     syncNotes();
     return Result(note);
+  }
+
+  void remove(Note note) => removeNotes([note]);
+
+  Future<void> removeNotes(List<Note> notes) async {
+    logEvent(Event.NoteDeleted);
+
+    final gitOpLock = RepositoryLock().gitOpLock;
+    await gitOpLock.synchronized(() async {
+      Log.d("Got removeNote lock");
+
+      // FIXME: What if the Note hasn't yet been saved?
+      for (var note in notes) {
+        note.parent.remove(note);
+      }
+      var result = await gitNoteRepo.removeNotes(notes);
+      if (result.isFailure) {
+        Log.e("removeNotes", result: result);
+        return;
+      }
+
+      increaseNumChanges();
+
+      // FIXME: Is there a way of figuring this amount dynamically?
+      // The '4 seconds' is taken from snack_bar.dart -> _kSnackBarDisplayDuration
+      // We wait an aritfical amount of time, so that the user has a chance to undo
+      // their delete operation, and that commit is not synced with the server, till then.
+      await Future.delayed(4.seconds);
+    });
+
+    syncNotes();
+  }
+
+  Future<void> undoRemoveNote(Note note) async {
+    logEvent(Event.NoteUndoDeleted);
+
+    final gitOpLock = RepositoryLock().gitOpLock;
+    await gitOpLock.synchronized(() async {
+      Log.d("Got undoRemoveNote lock");
+
+      note.parent.add(note);
+      var result = await gitNoteRepo.resetLastCommit();
+      if (result.isFailure) {
+        Log.e("undoRemoveNote", result: result);
+        return;
+      }
+
+      decreaseNumChanges();
+    });
+
+    syncNotes();
   }
 }
