@@ -21,13 +21,11 @@ class JournalNote {
     assert(!newFileName.contains(path.separator));
     assert(originalNote.oid.isNotEmpty);
 
-    // var gitJournal = context.read<GitJournalRepo>();
     var toNote = originalNote.copyWithFileName(newFileName);
     if (io.File(toNote.fullFilePath).existsSync()) {
       var ex = Exception('Destination Note exists');
       return Result.fail(ex);
     }
-    // var renameResult = await container.renameNote(originalNote, newFileName);
 
     Result<void> renameR = renameLocalNote(originalNote, toNote);
     if (renameR.isFailure) {

@@ -75,23 +75,23 @@ Future<void> main() async {
     expect(headCommit.parents[0], headHash);
   });
 
-  test('Create folder', () async {
-    await _setup();
-    const folderName = 'test_removed';
-    var rootFolder = repo.rootFolder;
-    await repo.createFolder(rootFolder, folderName);
-
-    final folder = rootFolder.getFolderWithSpec(folderName);
-    expect(folder?.rootFolder, rootFolder);
-    expect(folder?.folderName, folderName);
-
-    final gitRepo = GitRepository.load(repoPath).getOrThrow();
-    expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
-
-    var headCommit = gitRepo.headCommit().getOrThrow();
-    expect(headCommit.parents.length, 1);
-    expect(headCommit.parents[0], headHash);
-  });
+  // test('Create folder', () async {
+  //   await _setup();
+  //   const folderName = 'test_removed';
+  //   var rootFolder = repo.rootFolder;
+  //   await repo.createFolder(rootFolder, folderName);
+  //
+  //   final folder = rootFolder.getFolderWithSpec(folderName);
+  //   expect(folder?.rootFolder, rootFolder);
+  //   expect(folder?.folderName, folderName);
+  //
+  //   final gitRepo = GitRepository.load(repoPath).getOrThrow();
+  //   expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+  //
+  //   var headCommit = gitRepo.headCommit().getOrThrow();
+  //   expect(headCommit.parents.length, 1);
+  //   expect(headCommit.parents[0], headHash);
+  // });
 
   // test('Remove folder', () async {
   //   await _setup();

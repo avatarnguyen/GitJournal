@@ -67,6 +67,8 @@ class GitJournalRepo with ChangeNotifier {
 
   GitNoteRepository get gitRepo => _gitRepo;
 
+  NotesFolderConfig get notesFolderConfig => folderConfig;
+
   //
   // Mutable stuff
   //
@@ -432,38 +434,37 @@ class GitJournalRepo with ChangeNotifier {
     return syncNotes(doNotThrow: true);
   }
 
-  Future<Result<void>> createFolder(
-      NotesFolderFS parent, String folderName) async {
-    logEvent(Event.FolderAdded);
-
-    final gitOpLock = RepositoryLock().gitOpLock;
-    var r = await gitOpLock.synchronized(() async {
-      var newFolderPath = p.join(parent.folderPath, folderName);
-      var newFolder = NotesFolderFS(parent, newFolderPath, folderConfig);
-      var r = newFolder.create();
-      if (r.isFailure) {
-        Log.e("createFolder", result: r);
-        return fail(r);
-      }
-
-      Log.d("Created New Folder: " + newFolderPath);
-      parent.addFolder(newFolder);
-
-      var result = await _gitRepo.addFolder(newFolder);
-      if (result.isFailure) {
-        Log.e("createFolder", result: result);
-        return fail(result);
-      }
-
-      increaseNumChanges();
-      notifyListeners();
-      return Result(null);
-    });
-    if (r.isFailure) return fail(r);
-
-    syncNotesWithoutWaiting();
-    return Result(null);
-  }
+  // Future<Result<void>> createFolder(
+  //     NotesFolderFS parent, String folderName) async {
+  //   logEvent(Event.FolderAdded);
+  //
+  //   final gitOpLock = RepositoryLock().gitOpLock;
+  //   var r = await gitOpLock.synchronized(() async {
+  //     var newFolderPath = p.join(parent.folderPath, folderName);
+  //     var newFolder = NotesFolderFS(parent, newFolderPath, folderConfig);
+  //     var r = newFolder.create();
+  //     if (r.isFailure) {
+  //       Log.e("createFolder", result: r);
+  //       return fail(r);
+  //     }
+  //
+  //     Log.d("Created New Folder: " + newFolderPath);
+  //     parent.addFolder(newFolder);
+  //
+  //     var result = await _gitRepo.addFolder(newFolder);
+  //     if (result.isFailure) {
+  //       Log.e("createFolder", result: result);
+  //       return fail(result);
+  //     }
+  //
+  //     increaseNumChanges();
+  //     notifyListeners();
+  //     return Result(null);
+  //   });
+  //   if (r.isFailure) return fail(r);
+  //
+  //   syncNotesWithoutWaiting();
+  //   return Result(null);
 
   Future<void> removeFolder(NotesFolderFS folder) async {
     logEvent(Event.FolderDeleted);
