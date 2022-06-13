@@ -47,6 +47,28 @@ class JournalFolder {
     return Result(null);
   }
 
+  Future<void> remove(NotesFolderFS folder) async {
+    logEvent(Event.FolderDeleted);
+
+    final gitOpLock = RepositoryLock().gitOpLock;
+    await gitOpLock.synchronized(() async {
+      Log.d("Got removeFolder lock");
+      Log.d("Removing Folder: " + folder.folderPath);
+
+      folder.parentFS!.removeFolder(folder);
+      var result = await gitNoteRepo.removeFolder(folder);
+      if (result.isFailure) {
+        Log.e("removeFolder", result: result);
+        return;
+      }
+
+      increaseNumChanges();
+      // notifyListeners();
+    });
+
+    syncNotes();
+  }
+
   void syncNotes() {
     gitJournal.syncNotesWithoutWaiting();
   }

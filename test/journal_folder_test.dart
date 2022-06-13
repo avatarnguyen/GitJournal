@@ -18,11 +18,13 @@ void main() {
     GitHash? head,
     Map<String, Object> sharedPrefValues = const {},
   }) async {
+    var gitHash = head ?? headHash;
     var testData = await TestData.load(
-      headHash: head ?? headHash,
+      headHash: gitHash,
       sharedPrefValues: sharedPrefValues,
     );
 
+    debugPrint('Head Hash: $gitHash');
     debugPrint('Test Data Instance: ${testData.hashCode}');
 
     repoPath = testData.repoPath;
@@ -54,19 +56,22 @@ void main() {
 
     test('should create and then remove the created folder successfully',
         () async {
+      // arrange
+      final removeHeadHash =
+          GitHash('7fc65b59170bdc91013eb56cdc65fa3307f2e7de');
+      await _setupWithTestData(head: removeHeadHash);
       const folderName = 'test_removed';
       final _rootFolder = repo.rootFolder;
       await journalFolder.create(_rootFolder, folderName);
-      //
+
       final folder = _rootFolder.getFolderWithSpec(folderName);
       expect(folder?.rootFolder, _rootFolder);
       expect(folder?.folderName, folderName);
 
-      final removeHeadHash =
-          GitHash('7fc65b59170bdc91013eb56cdc65fa3307f2e7de');
-      await _setupWithTestData(head: removeHeadHash);
-      await repo.removeFolder(folder!);
+      // act
+      await journalFolder.remove(folder!);
 
+      // assert
       final removedFolder = _rootFolder.getFolderWithSpec(folderName);
       expect(removedFolder, isNull);
 
