@@ -641,8 +641,10 @@ class _FolderViewState extends State<FolderView> {
       builder: (context) => FolderSelectionDialog(),
     );
     if (destFolder != null) {
-      var repo = context.read<GitJournalRepo>();
-      var r = await repo.moveNotes(_selectedNotes, destFolder);
+      // var repo = context.read<GitJournalRepo>();
+      final journalNote = context.read<JournalNote>();
+
+      var r = await journalNote.moveNotes(_selectedNotes, destFolder);
       showResultError(context, r);
     }
 

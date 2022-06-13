@@ -562,8 +562,9 @@ class NoteEditorState extends State<NoteEditor>
           _note = note.copyWith(parent: destFolder);
         });
       } else {
-        var stateContainer = context.read<GitJournalRepo>();
-        var r = await stateContainer.moveNote(note, destFolder);
+        // var stateContainer = context.read<GitJournalRepo>();
+        final journalNote = context.read<JournalNote>();
+        var r = await journalNote.move(note, destFolder);
         if (r.isFailure) {
           showResultError(context, r);
           return;
