@@ -557,68 +557,68 @@ class GitJournalRepo with ChangeNotifier {
     numChanges += 1;
   }
 
-  Future<Result<Note>> moveNote(Note note, NotesFolderFS destFolder) async {
-    var r = await moveNotes([note], destFolder);
-    if (r.isFailure) return fail(r);
-
-    var newNotes = r.getOrThrow();
-    assert(newNotes.length == 1);
-    return Result(newNotes.first);
-  }
-
-  Future<Result<List<Note>>> moveNotes(
-      List<Note> notes, NotesFolderFS destFolder) async {
-    notes = notes
-        .where((n) => n.parent.folderPath != destFolder.folderPath)
-        .toList();
-
-    if (notes.isEmpty) {
-      var ex = Exception(
-        "All selected notes are already in `${destFolder.folderPath}`",
-      );
-      return Result.fail(ex);
-    }
-
-    var newNotes = <Note>[];
-
-    logEvent(Event.NoteMoved);
-
-    final gitOpLock = RepositoryLock().gitOpLock;
-    var r = await gitOpLock.synchronized(() async {
-      Log.d("Got moveNote lock");
-
-      var oldPaths = <String>[];
-      var newPaths = <String>[];
-      for (var note in notes) {
-        var result = NotesFolderFS.moveNote(note, destFolder);
-        // FIXME: We need to validate that this wont cause any problems!
-        //        Transaction needs to be reverted
-        if (result.isFailure) {
-          Log.e("moveNotes", result: result);
-          return fail(result);
-        }
-        var newNote = result.getOrThrow();
-        oldPaths.add(note.filePath);
-        newPaths.add(newNote.filePath);
-
-        newNotes.add(newNote);
-      }
-
-      var result = await _gitRepo.moveNotes(oldPaths, newPaths);
-      if (result.isFailure) {
-        Log.e("moveNotes", result: result);
-        return fail(result);
-      }
-
-      increaseNumChanges();
-      notifyListeners();
-      return Result(null);
-    });
-    if (r.isFailure) return fail(r);
-
-    syncNotesWithoutWaiting();
-    return Result(newNotes);
-  }
+  // Future<Result<Note>> moveNote(Note note, NotesFolderFS destFolder) async {
+  //   var r = await moveNotes([note], destFolder);
+  //   if (r.isFailure) return fail(r);
+  //
+  //   var newNotes = r.getOrThrow();
+  //   assert(newNotes.length == 1);
+  //   return Result(newNotes.first);
+  // }
+  //
+  // Future<Result<List<Note>>> moveNotes(
+  //     List<Note> notes, NotesFolderFS destFolder) async {
+  //   notes = notes
+  //       .where((n) => n.parent.folderPath != destFolder.folderPath)
+  //       .toList();
+  //
+  //   if (notes.isEmpty) {
+  //     var ex = Exception(
+  //       "All selected notes are already in `${destFolder.folderPath}`",
+  //     );
+  //     return Result.fail(ex);
+  //   }
+  //
+  //   var newNotes = <Note>[];
+  //
+  //   logEvent(Event.NoteMoved);
+  //
+  //   final gitOpLock = RepositoryLock().gitOpLock;
+  //   var r = await gitOpLock.synchronized(() async {
+  //     Log.d("Got moveNote lock");
+  //
+  //     var oldPaths = <String>[];
+  //     var newPaths = <String>[];
+  //     for (var note in notes) {
+  //       var result = NotesFolderFS.moveNote(note, destFolder);
+  //       // FIXME: We need to validate that this wont cause any problems!
+  //       //        Transaction needs to be reverted
+  //       if (result.isFailure) {
+  //         Log.e("moveNotes", result: result);
+  //         return fail(result);
+  //       }
+  //       var newNote = result.getOrThrow();
+  //       oldPaths.add(note.filePath);
+  //       newPaths.add(newNote.filePath);
+  //
+  //       newNotes.add(newNote);
+  //     }
+  //
+  //     var result = await _gitRepo.moveNotes(oldPaths, newPaths);
+  //     if (result.isFailure) {
+  //       Log.e("moveNotes", result: result);
+  //       return fail(result);
+  //     }
+  //
+  //     increaseNumChanges();
+  //     notifyListeners();
+  //     return Result(null);
+  //   });
+  //   if (r.isFailure) return fail(r);
+  //
+  //   syncNotesWithoutWaiting();
+  //   return Result(newNotes);
+  // }
 
   Future<Result<Note>> saveNoteToDisk(Note note) async {
     assert(note.oid.isEmpty);

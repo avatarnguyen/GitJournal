@@ -1,5 +1,6 @@
 import 'package:dart_git/dart_git.dart';
 import 'package:gitjournal/analytics/analytics.dart';
+import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/git_repo.dart';
 import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
@@ -197,5 +198,68 @@ class JournalNote {
     });
 
     syncNotes();
+  }
+
+  Future<Result<Note>> move(Note note, NotesFolderFS destFolder) async {
+    var result = await moveNotes([note], destFolder);
+    if (result.isFailure) return fail(result);
+
+    var newNotes = result.getOrThrow();
+    assert(newNotes.length == 1);
+    return Result(newNotes.first);
+  }
+
+  Future<Result<List<Note>>> moveNotes(
+      List<Note> notes, NotesFolderFS destFolder) async {
+    notes = notes
+        .where((n) => n.parent.folderPath != destFolder.folderPath)
+        .toList();
+
+    if (notes.isEmpty) {
+      var ex = Exception(
+        "All selected notes are already in `${destFolder.folderPath}`",
+      );
+      return Result.fail(ex);
+    }
+
+    var newNotes = <Note>[];
+
+    logEvent(Event.NoteMoved);
+
+    final gitOpLock = RepositoryLock().gitOpLock;
+    var r = await gitOpLock.synchronized(() async {
+      Log.d("Got moveNote lock");
+
+      var oldPaths = <String>[];
+      var newPaths = <String>[];
+      for (var note in notes) {
+        var result = NotesFolderFS.moveNote(note, destFolder);
+        // FIXME: We need to validate that this wont cause any problems!
+        //        Transaction needs to be reverted
+        if (result.isFailure) {
+          Log.e("moveNotes", result: result);
+          return fail(result);
+        }
+        var newNote = result.getOrThrow();
+        oldPaths.add(note.filePath);
+        newPaths.add(newNote.filePath);
+
+        newNotes.add(newNote);
+      }
+
+      var result = await gitNoteRepo.moveNotes(oldPaths, newPaths);
+      if (result.isFailure) {
+        Log.e("moveNotes", result: result);
+        return fail(result);
+      }
+
+      increaseNumChanges();
+      // notifyListeners();
+      return Result(null);
+    });
+    if (r.isFailure) return fail(r);
+
+    syncNotes();
+    return Result(newNotes);
   }
 }
