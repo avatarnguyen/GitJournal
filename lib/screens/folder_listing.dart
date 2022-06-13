@@ -4,16 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import 'package:flutter/material.dart';
-
 import 'package:easy_localization/easy_localization.dart';
-import 'package:provider/provider.dart';
-
+import 'package:flutter/material.dart';
 import 'package:gitjournal/core/folder/flattened_notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder.dart';
 import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/folder_views/folder_view.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
+import 'package:gitjournal/journal_folder.dart';
 import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/settings/app_config.dart';
 import 'package:gitjournal/utils/utils.dart';
@@ -21,6 +19,7 @@ import 'package:gitjournal/widgets/app_bar_menu_button.dart';
 import 'package:gitjournal/widgets/app_drawer.dart';
 import 'package:gitjournal/widgets/folder_tree_view.dart';
 import 'package:gitjournal/widgets/rename_dialog.dart';
+import 'package:provider/provider.dart';
 
 class FolderListingScreen extends StatefulWidget {
   static const routePath = '/folders';
@@ -119,8 +118,9 @@ class _FolderListingScreenState extends State<FolderListingScreen> {
               builder: (_) => CreateFolderAlertDialog(),
             );
             if (folderName is String) {
-              var repo = context.read<GitJournalRepo>();
-              var r = await repo.createFolder(_selectedFolder!, folderName);
+              // var repo = context.read<GitJournalRepo>();
+              final journalFolder = context.read<JournalFolder>();
+              var r = await journalFolder.create(_selectedFolder!, folderName);
               showResultError(context, r);
             }
           } else if (value == "Delete") {
@@ -130,8 +130,9 @@ class _FolderListingScreenState extends State<FolderListingScreen> {
                 builder: (_) => DeleteFolderErrorDialog(),
               );
             } else {
-              var container = context.read<GitJournalRepo>();
-              container.removeFolder(_selectedFolder!);
+              // var container = context.read<GitJournalRepo>();
+              final journalFolder = context.read<JournalFolder>();
+              journalFolder.remove(_selectedFolder!);
             }
           }
 
@@ -178,11 +179,11 @@ class CreateFolderButton extends StatelessWidget {
           builder: (_) => CreateFolderAlertDialog(),
         );
         if (folderName is String) {
-          var repo = context.read<GitJournalRepo>();
+          // var repo = context.read<GitJournalRepo>();
           final notesFolder =
               Provider.of<NotesFolderFS>(context, listen: false);
-
-          var r = await repo.createFolder(notesFolder, folderName);
+          final journalFolder = context.read<JournalFolder>();
+          var r = await journalFolder.create(notesFolder, folderName);
           showResultError(context, r);
         }
       },
