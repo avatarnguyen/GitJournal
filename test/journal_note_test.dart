@@ -214,7 +214,7 @@ void main() {
   });
 
   group('Move Note ', () {
-    test('Move - Note from root to Folder', () async {
+    test('from root to Folder', () async {
       var note = repo.rootFolder.getNoteWithSpec('1.md')!;
       var folder = repo.rootFolder.getFolderWithSpec('f1')!;
 
@@ -234,7 +234,7 @@ void main() {
       expect(root.getNoteWithSpec('f1/1.md'), isNotNull);
     });
 
-    test('Move - Note from Folder to Root', () async {
+    test('from Folder to Root', () async {
       var note = repo.rootFolder.getNoteWithSpec('f1/3.md')!;
       var folder = repo.rootFolder;
 
@@ -254,7 +254,7 @@ void main() {
       expect(root.getNoteWithSpec('3.md'), isNotNull);
     });
 
-    test('Move - To New Folder', () async {
+    test('To New Folder', () async {
       var note = repo.rootFolder.getNoteWithSpec('1.md')!;
       var folder = repo.rootFolder.getOrBuildFolderWithSpec('f2');
       folder.create();
@@ -275,7 +275,7 @@ void main() {
       expect(root.getNoteWithSpec('f2/1.md'), isNotNull);
     });
 
-    test('Move - To New Folder Failure', () async {
+    test('To New Folder should fail', () async {
       var note = repo.rootFolder.getNoteWithSpec('1.md')!;
       var folder = repo.rootFolder.getOrBuildFolderWithSpec('f2');
 
@@ -290,26 +290,26 @@ void main() {
       expect(root.getNoteWithSpec('f2/1.md'), isNull);
     });
 
-    // test('Move - From one folder to another folder', () async {
-    //   var headHash = GitHash('7fc65b59170bdc91013eb56cdc65fa3307f2e7de');
-    //   await _setup(head: headHash);
-    //   var note = repo.rootFolder.getNoteWithSpec('f1/3.md')!;
-    //   var folder = repo.rootFolder.getFolderWithSpec('f2')!;
-    //
-    //   var r = await repo.moveNote(note, folder);
-    //   expect(r.isSuccess, true);
-    //   expect(r.isFailure, false);
-    //
-    //   var gitRepo = GitRepository.load(repoPath).getOrThrow();
-    //   expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
-    //
-    //   var headCommit = gitRepo.headCommit().getOrThrow();
-    //   expect(headCommit.parents.length, 1);
-    //   expect(headCommit.parents[0], headHash);
-    //
-    //   var root = repo.rootFolder;
-    //   expect(root.getNoteWithSpec('f1/3.md'), null);
-    //   expect(root.getNoteWithSpec('f2/3.md'), isNotNull);
-    // });
+    test('From one folder to another folder', () async {
+      var headHash = GitHash('7fc65b59170bdc91013eb56cdc65fa3307f2e7de');
+      await _setupWithTestData(head: headHash);
+      var note = repo.rootFolder.getNoteWithSpec('f1/3.md')!;
+      var folder = repo.rootFolder.getFolderWithSpec('f2')!;
+
+      var r = await journalNote.move(note, folder);
+      expect(r.isSuccess, true);
+      expect(r.isFailure, false);
+
+      var gitRepo = GitRepository.load(repoPath).getOrThrow();
+      expect(gitRepo.headHash().getOrThrow(), isNot(headHash));
+
+      var headCommit = gitRepo.headCommit().getOrThrow();
+      expect(headCommit.parents.length, 1);
+      expect(headCommit.parents[0], headHash);
+
+      var root = repo.rootFolder;
+      expect(root.getNoteWithSpec('f1/3.md'), null);
+      expect(root.getNoteWithSpec('f2/3.md'), isNotNull);
+    });
   });
 }
