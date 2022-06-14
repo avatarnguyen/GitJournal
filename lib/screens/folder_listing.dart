@@ -12,7 +12,6 @@ import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/folder_views/folder_view.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
 import 'package:gitjournal/journal_folder.dart';
-import 'package:gitjournal/repository.dart';
 import 'package:gitjournal/settings/app_config.dart';
 import 'package:gitjournal/utils/utils.dart';
 import 'package:gitjournal/widgets/app_bar_menu_button.dart';
@@ -109,8 +108,8 @@ class _FolderListingScreenState extends State<FolderListingScreen> {
               ),
             );
             if (folderName is String) {
-              var container = context.read<GitJournalRepo>();
-              container.renameFolder(_selectedFolder!, folderName);
+              final journalFolder = context.read<JournalFolder>();
+              journalFolder.rename(_selectedFolder!, folderName);
             }
           } else if (value == "Create") {
             var folderName = await showDialog(

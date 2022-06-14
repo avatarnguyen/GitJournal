@@ -69,6 +69,33 @@ class JournalFolder {
     syncNotes();
   }
 
+  Future<void> rename(NotesFolderFS folder, String newFolderName) async {
+    assert(!newFolderName.contains(path.separator));
+
+    logEvent(Event.FolderRenamed);
+
+    final gitOpLock = RepositoryLock().gitOpLock;
+    await gitOpLock.synchronized(() async {
+      var oldFolderPath = folder.folderPath;
+      Log.d("Renaming Folder from $oldFolderPath -> $newFolderName");
+      folder.rename(newFolderName);
+
+      var result = await gitNoteRepo.renameFolder(
+        oldFolderPath,
+        folder.folderPath,
+      );
+      if (result.isFailure) {
+        Log.e("renameFolder", result: result);
+        return;
+      }
+
+      increaseNumChanges();
+      // notifyListeners();
+    });
+
+    syncNotes();
+  }
+
   void syncNotes() {
     gitJournal.syncNotesWithoutWaiting();
   }

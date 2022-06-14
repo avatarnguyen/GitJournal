@@ -434,6 +434,23 @@ class GitJournalRepo with ChangeNotifier {
     return syncNotes(doNotThrow: true);
   }
 
+  void syncNotesWithoutWaiting() {
+    unawaited(_syncNotes());
+  }
+
+  void increaseNumChanges() {
+    numChanges += 1;
+  }
+
+  void decreaseNumChanges() {
+    numChanges -= 1;
+  }
+
+  Future<Result<Note>> saveNoteToDisk(Note note) async {
+    assert(note.oid.isEmpty);
+    return NoteStorage.save(note);
+  }
+
   // Future<Result<void>> createFolder(
   //     NotesFolderFS parent, String folderName) async {
   //   logEvent(Event.FolderAdded);
@@ -488,32 +505,32 @@ class GitJournalRepo with ChangeNotifier {
   //   syncNotesWithoutWaiting();
   // }
 
-  Future<void> renameFolder(NotesFolderFS folder, String newFolderName) async {
-    assert(!newFolderName.contains(p.separator));
-
-    logEvent(Event.FolderRenamed);
-
-    final gitOpLock = RepositoryLock().gitOpLock;
-    await gitOpLock.synchronized(() async {
-      var oldFolderPath = folder.folderPath;
-      Log.d("Renaming Folder from $oldFolderPath -> $newFolderName");
-      folder.rename(newFolderName);
-
-      var result = await _gitRepo.renameFolder(
-        oldFolderPath,
-        folder.folderPath,
-      );
-      if (result.isFailure) {
-        Log.e("renameFolder", result: result);
-        return;
-      }
-
-      increaseNumChanges();
-      notifyListeners();
-    });
-
-    syncNotesWithoutWaiting();
-  }
+  // Future<void> renameFolder(NotesFolderFS folder, String newFolderName) async {
+  //   assert(!newFolderName.contains(p.separator));
+  //
+  //   logEvent(Event.FolderRenamed);
+  //
+  //   final gitOpLock = RepositoryLock().gitOpLock;
+  //   await gitOpLock.synchronized(() async {
+  //     var oldFolderPath = folder.folderPath;
+  //     Log.d("Renaming Folder from $oldFolderPath -> $newFolderName");
+  //     folder.rename(newFolderName);
+  //
+  //     var result = await _gitRepo.renameFolder(
+  //       oldFolderPath,
+  //       folder.folderPath,
+  //     );
+  //     if (result.isFailure) {
+  //       Log.e("renameFolder", result: result);
+  //       return;
+  //     }
+  //
+  //     increaseNumChanges();
+  //     notifyListeners();
+  //   });
+  //
+  //   syncNotesWithoutWaiting();
+  // }
 
   // Future<Result<Note>> renameNote(Note fromNote, String newFileName) async {
   // assert(!newFileName.contains(p.separator));
@@ -549,14 +566,6 @@ class GitJournalRepo with ChangeNotifier {
   // syncNotesWithoutWaiting();
   // return Result(toNote);
   // }
-
-  void syncNotesWithoutWaiting() {
-    unawaited(_syncNotes());
-  }
-
-  void increaseNumChanges() {
-    numChanges += 1;
-  }
 
   // Future<Result<Note>> moveNote(Note note, NotesFolderFS destFolder) async {
   //   var r = await moveNotes([note], destFolder);
@@ -620,11 +629,6 @@ class GitJournalRepo with ChangeNotifier {
   //   syncNotesWithoutWaiting();
   //   return Result(newNotes);
   // }
-
-  Future<Result<Note>> saveNoteToDisk(Note note) async {
-    assert(note.oid.isEmpty);
-    return NoteStorage.save(note);
-  }
 
   // Future<Result<Note>> addNote(Note note) async {
   //   assert(note.oid.isEmpty);
@@ -711,10 +715,6 @@ class GitJournalRepo with ChangeNotifier {
   //
   //   syncNotesWithoutWaiting();
   // }
-
-  void decreaseNumChanges() {
-    numChanges -= 1;
-  }
 
   // Future<Result<Note>> updateNote(Note oldNote, Note newNote) async {
   //   assert(oldNote.oid.isNotEmpty);
