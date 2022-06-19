@@ -283,7 +283,6 @@ class GitJournalRepo with ChangeNotifier {
 
   Future<void> _resetFileStorage() async {
     await fileStorageCache.clear();
-
     // This will discard this Repository and build a new one
     var _ = repoManager.buildActiveRepository();
   }

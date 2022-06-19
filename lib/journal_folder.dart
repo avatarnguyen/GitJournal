@@ -47,6 +47,7 @@ class JournalFolder {
     return Result(null);
   }
 
+  // Fixme: not working, path not found error
   Future<void> remove(NotesFolderFS folder) async {
     logEvent(Event.FolderDeleted);
 

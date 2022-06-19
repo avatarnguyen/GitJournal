@@ -10,6 +10,7 @@ import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/views/inline_tags_view.dart';
 import 'package:gitjournal/core/views/note_links_view.dart';
 import 'package:gitjournal/core/views/summary_view.dart';
+import 'package:gitjournal/journal_folder.dart';
 import 'package:gitjournal/journal_note.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/repository.dart';
@@ -79,6 +80,8 @@ class GitJournalChangeNotifiers extends StatelessWidget {
 
     Log.d('Git Note Repo: ${repo.gitRepo.hashCode}');
     final journalNote = JournalNote(repo, repo.gitRepo);
+    final journalFolder =
+        JournalFolder(repo, repo.gitRepo, repo.notesFolderConfig);
 
     return MultiProvider(
       providers: [
@@ -87,6 +90,7 @@ class GitJournalChangeNotifiers extends StatelessWidget {
         ChangeNotifierProvider<Settings>.value(value: repo.settings),
         ChangeNotifierProvider<NotesFolderConfig>.value(value: folderConfig),
         Provider<JournalNote>.value(value: journalNote),
+        Provider<JournalFolder>.value(value: journalFolder),
       ],
       child: _buildNoteMaterializedViews(
         repo,
