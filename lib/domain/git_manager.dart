@@ -4,7 +4,7 @@ import 'package:dart_git/dart_git.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/settings/settings.dart';
 
-abstract class GitJournalRepo {
+abstract class GitManager {
   Future<Result<void>> init(String repoPath);
   Future<Result<void>> removeRemote(String remoteName);
   Future<Result<bool>> canResetHard();
@@ -17,10 +17,10 @@ abstract class GitJournalRepo {
   Future<Result<void>> ensureValidRepo();
 }
 
-class GitJournalRepoImpl implements GitJournalRepo {
+class GitRepoManager implements GitManager {
   final String repoPath;
 
-  GitJournalRepoImpl(this.repoPath);
+  GitRepoManager(this.repoPath);
 
   @override
   Future<List<String>> branches() async {
@@ -40,7 +40,7 @@ class GitJournalRepoImpl implements GitJournalRepo {
   Future<Result<bool>> canResetHard() {
     return catchAll(() async {
       var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
-      var branchName = await repo.currentBranch().getOrThrow();
+      var branchName = await currentBranch(repo).getOrThrow();
       var branchConfig = repo.config.branch(branchName);
       if (branchConfig == null) {
         throw Exception("Branch config for '$branchName' not found");
@@ -56,6 +56,8 @@ class GitJournalRepoImpl implements GitJournalRepo {
       return Result(remoteBranch.hash != headHash);
     });
   }
+
+  Future<Result<String>> currentBranch(GitAsyncRepository repo) => repo.currentBranch();
 
   @override
   Future<String> checkoutBranch(String branchName) async {
