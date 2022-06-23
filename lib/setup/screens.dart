@@ -11,7 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:function_types/function_types.dart';
 import 'package:gitjournal/analytics/analytics.dart';
 import 'package:gitjournal/apis/githost_factory.dart';
-import 'package:gitjournal/domain/git_journal_repo.dart';
+import 'package:gitjournal/domain/git_manager.dart';
 import 'package:gitjournal/error_reporting.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
 import 'package:gitjournal/git_journal_presenter.dart';
@@ -427,14 +427,14 @@ class GitHostSetupScreenState extends State<GitHostSetupScreen> {
 
   Future<void> _removeRemote() async {
     var repo = context.read<GitJournalPresenter>();
-    final result1 = await context.read<GitJournalRepo>().ensureValidRepo();
+    final result1 = await context.read<GitManager>().ensureValidRepo();
 
     if (result1.isFailure) {
       showResultError(context, result1);
     }
 
     final result2 =
-        await context.read<GitJournalRepo>().removeRemote(widget.remoteName);
+        await context.read<GitManager>().removeRemote(widget.remoteName);
     if (result2.isFailure) {
       showResultError(context, result2);
     }

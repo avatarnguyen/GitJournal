@@ -10,7 +10,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:function_types/function_types.dart';
-import 'package:gitjournal/domain/git_journal_repo.dart';
+import 'package:gitjournal/domain/git_manager.dart';
 import 'package:gitjournal/generated/locale_keys.g.dart';
 import 'package:gitjournal/repository_manager.dart';
 import 'package:gitjournal/settings/app_config.dart';
@@ -185,7 +185,7 @@ class __CurrentRepoState extends State<_CurrentRepo>
     }
 
     // var repo = context.watch<GitJournalPresenter>();
-    final remoteConfigs = await context.read<GitJournalRepo>().remoteConfigs();
+    final remoteConfigs = await context.read<GitManager>().remoteConfigs();
 
     if (!mounted) return;
 
