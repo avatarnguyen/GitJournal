@@ -18,7 +18,7 @@ import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/core/notes/note.dart';
 import 'package:gitjournal/core/views/inline_tags_view.dart';
-import 'package:gitjournal/domain/git_journal_repo.dart';
+import 'package:gitjournal/domain/git_manager.dart';
 import 'package:gitjournal/editors/checklist_editor.dart';
 import 'package:gitjournal/editors/common.dart';
 import 'package:gitjournal/editors/common_types.dart';
@@ -184,7 +184,7 @@ class NoteEditorState extends State<NoteEditor>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
 
     if (widget.existingNote != null) {
       var existingNote = widget.existingNote!;
@@ -219,7 +219,7 @@ class NoteEditorState extends State<NoteEditor>
 
   @override
   void dispose() {
-    var _ = WidgetsBinding.instance!.removeObserver(this);
+    var _ = WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -576,7 +576,7 @@ class NoteEditorState extends State<NoteEditor>
     assert(note.oid.isEmpty);
 
     if (!_isNewNote) {
-      await context.read<GitJournalRepo>().discardChanges(note.filePath);
+      await context.read<GitManager>().discardChanges(note.filePath);
       context.read<GitJournalPresenter>().reloadNotes();
     }
 
