@@ -510,6 +510,20 @@ class GitJournalRepo with ChangeNotifier {
     }
   }
 
+  // this is more local storage related
+  Future<void> delete() async {
+    dynamic _;
+    _ = await io.Directory(repoPath).delete(recursive: true);
+    _ = await io.Directory(cacheDir).delete(recursive: true);
+  }
+
+  Result<bool> fileExists(String path) {
+    return catchAllSync(() {
+      var type = io.FileSystemEntity.typeSync(path);
+      return Result(type != io.FileSystemEntityType.notFound);
+    });
+  }
+
   Future<void> discardChanges(Note note) async {
     // FIXME: Add the checkout method to GJRepo
     await gitManager.discardChanges(note.filePath);
@@ -520,9 +534,7 @@ class GitJournalRepo with ChangeNotifier {
   }
 
   Future<List<GitRemoteConfig>> remoteConfigs() async {
-    var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
-    var config = repo.config.remotes;
-    return config;
+    return await gitManager.remoteConfigs();
   }
 
   String? get currentBranch => _currentBranch;
@@ -570,20 +582,6 @@ class GitJournalRepo with ChangeNotifier {
 
   Future<Result<void>> init(String repoPath) async {
     return gitManager.init(repoPath);
-  }
-
-  // this is more local storage related
-  Future<void> delete() async {
-    dynamic _;
-    _ = await io.Directory(repoPath).delete(recursive: true);
-    _ = await io.Directory(cacheDir).delete(recursive: true);
-  }
-
-  Result<bool> fileExists(String path) {
-    return catchAllSync(() {
-      var type = io.FileSystemEntity.typeSync(path);
-      return Result(type != io.FileSystemEntityType.notFound);
-    });
   }
 }
 

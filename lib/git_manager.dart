@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:dart_git/config.dart';
 import 'package:dart_git/dart_git.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/settings/settings.dart';
@@ -12,6 +13,7 @@ abstract class GitManager {
   Future<Result<void>> ensureValidRepo();
   Future<Result<void>> init(String repoPath);
   Future<void> discardChanges(String filePath);
+  Future<List<GitRemoteConfig>> remoteConfigs();
 }
 
 class GitManagerImpl implements GitManager {
@@ -161,5 +163,12 @@ class GitManagerImpl implements GitManager {
   Future<void> discardChanges(String filePath) async {
     var gitRepo = await getRepository();
     await gitRepo.checkout(filePath).throwOnError();
+  }
+
+  @override
+  Future<List<GitRemoteConfig>> remoteConfigs() async {
+    var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
+    var config = repo.config.remotes;
+    return config;
   }
 }
