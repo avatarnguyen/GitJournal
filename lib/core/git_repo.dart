@@ -23,6 +23,7 @@ import 'package:gitjournal/utils/git_desktop.dart';
 
 bool useDartGit = false;
 
+// manage repository methods for folder and notes
 class GitNoteRepository {
   final String gitRepoPath;
   final gb.GitRepo _gitRepo;

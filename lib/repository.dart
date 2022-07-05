@@ -25,6 +25,7 @@ import 'package:gitjournal/core/note.dart';
 import 'package:gitjournal/core/note_storage.dart';
 import 'package:gitjournal/core/notes_cache.dart';
 import 'package:gitjournal/error_reporting.dart';
+import 'package:gitjournal/git_manager.dart';
 import 'package:gitjournal/logger/logger.dart';
 import 'package:gitjournal/repository_lock.dart';
 import 'package:gitjournal/repository_manager.dart';
@@ -41,6 +42,7 @@ import 'package:universal_io/io.dart' show Platform;
 import 'package:universal_io/io.dart' as io;
 
 class GitJournalRepo with ChangeNotifier {
+  final GitManager gitManager;
   final RepositoryManager repoManager;
   final StorageConfig storageConfig;
   final GitConfig gitConfig;
@@ -170,6 +172,8 @@ class GitJournalRepo with ChangeNotifier {
     var headR = await repo.headHash();
     var head = headR.isFailure ? GitHash.zero() : headR.getOrThrow();
 
+    final _gitManager = GitManagerImpl(repoPath: repoPath);
+
     var gjRepo = GitJournalRepo._internal(
       repoManager: repoManager,
       repoPath: repoPath,
@@ -187,6 +191,7 @@ class GitJournalRepo with ChangeNotifier {
       headHash: head,
       loadFromCache: loadFromCache,
       syncOnBoot: syncOnBoot,
+      gitManager: _gitManager,
     );
 
     return Result(gjRepo);
@@ -240,6 +245,7 @@ class GitJournalRepo with ChangeNotifier {
     required GitHash headHash,
     required bool loadFromCache,
     required bool syncOnBoot,
+    required this.gitManager,
   }) {
     _gitRepo = GitNoteRepository(gitRepoPath: repoPath, config: gitConfig);
     rootFolder = NotesFolderFS.root(folderConfig, fileStorage);
@@ -520,37 +526,11 @@ class GitJournalRepo with ChangeNotifier {
     return config;
   }
 
-  Future<List<String>> branches() async {
-    var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
-    var branches = Set<String>.from(await repo.branches().getOrThrow());
-    if (repo.config.remotes.isNotEmpty) {
-      var remoteName = repo.config.remotes.first.name;
-      var remoteBranches = await repo.remoteBranches(remoteName).getOrThrow();
-      branches.addAll(remoteBranches.map((e) {
-        return e.name.branchName()!;
-      }));
-    }
-    return branches.toList()..sort();
-  }
-
   String? get currentBranch => _currentBranch;
 
   Future<String> checkoutBranch(String branchName) async {
-    Log.i("Changing branch to $branchName");
-    var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
-
     try {
-      var created = await createBranchIfRequired(repo, branchName);
-      if (created.isEmpty) {
-        return "";
-      }
-    } catch (ex, st) {
-      Log.e("createBranch", ex: ex, stacktrace: st);
-    }
-
-    try {
-      await repo.checkoutBranch(branchName).throwOnError();
-      _currentBranch = branchName;
+      _currentBranch = await gitManager.checkoutBranch(branchName);
       Log.i("Done checking out $branchName");
 
       await _notesCache.clear();
@@ -564,35 +544,7 @@ class GitJournalRepo with ChangeNotifier {
     return branchName;
   }
 
-  // FIXME: Why does this need to return a string?
-  /// throws exceptions
-  Future<String> createBranchIfRequired(
-      GitAsyncRepository repo, String name) async {
-    var localBranches = await repo.branches().getOrThrow();
-    if (localBranches.contains(name)) {
-      return name;
-    }
-
-    if (repo.config.remotes.isEmpty) {
-      return "";
-    }
-    var remoteConfig = repo.config.remotes.first;
-    var remoteBranches =
-        await repo.remoteBranches(remoteConfig.name).getOrThrow();
-    var remoteBranchRef = remoteBranches.firstWhereOrNull(
-      (ref) => ref.name.branchName() == name,
-    );
-    if (remoteBranchRef == null) {
-      return "";
-    }
-
-    await repo.createBranch(name, hash: remoteBranchRef.hash).throwOnError();
-    await repo.setBranchUpstreamTo(name, remoteConfig, name).throwOnError();
-
-    Log.i("Created branch $name");
-    return name;
-  }
-
+  // this is more local storage related
   Future<void> delete() async {
     dynamic _;
     _ = await io.Directory(repoPath).delete(recursive: true);
@@ -683,6 +635,8 @@ class GitJournalRepo with ChangeNotifier {
     return GitRepository.init(repoPath, defaultBranch: DEFAULT_BRANCH);
   }
 }
+
+// -----------------------------------------------------
 
 Future<void> _copyDirectory(String source, String destination) async {
   await for (var entity in io.Directory(source).list(recursive: false)) {

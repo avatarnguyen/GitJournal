@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:gitjournal/git_manager.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:universal_io/io.dart';
@@ -44,6 +45,7 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
     var settings = Provider.of<Settings>(context);
     var gitConfig = Provider.of<GitConfig>(context);
     var repo = Provider.of<GitJournalRepo>(context);
+    final gitManager = Provider.of<GitManager>(context);
 
     if (remoteHost.isEmpty) {
       repo.remoteConfigs().then((list) {
@@ -56,7 +58,7 @@ class _GitRemoteSettingsScreenState extends State<GitRemoteSettingsScreen> {
 
     if (branches.isEmpty) {
       currentBranch = repo.currentBranch ?? "";
-      repo.branches().then((list) {
+      gitManager.branches().then((list) {
         setState(() {
           if (!mounted) return;
           branches = list;

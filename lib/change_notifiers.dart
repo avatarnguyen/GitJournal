@@ -10,6 +10,7 @@ import 'package:gitjournal/core/folder/notes_folder_fs.dart';
 import 'package:gitjournal/core/views/inline_tags_view.dart';
 import 'package:gitjournal/core/views/note_links_view.dart';
 import 'package:gitjournal/core/views/summary_view.dart';
+import 'package:gitjournal/git_manager.dart';
 import 'package:gitjournal/journal_folder.dart';
 import 'package:gitjournal/journal_note.dart';
 import 'package:gitjournal/logger/logger.dart';
