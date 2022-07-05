@@ -554,22 +554,7 @@ class GitJournalRepo with ChangeNotifier {
   /// reset --hard the current branch to its remote branch
   Future<Result<void>> resetHard() {
     return catchAll(() async {
-      var repo =
-          await GitAsyncRepository.load(_gitRepo.gitRepoPath).getOrThrow();
-      var branchName = await repo.currentBranch().getOrThrow();
-      var branchConfig = repo.config.branch(branchName);
-      if (branchConfig == null) {
-        throw Exception("Branch config for '$branchName' not found");
-      }
-
-      var remoteName = branchConfig.remote;
-      if (remoteName == null) {
-        throw Exception("Branch config for '$branchName' missing remote");
-      }
-      var remoteBranch =
-          await repo.remoteBranch(remoteName, branchName).getOrThrow();
-      await repo.resetHard(remoteBranch.hash!).throwOnError();
-
+      await gitManager.resetHard();
       numChanges = 0;
       notifyListeners();
 

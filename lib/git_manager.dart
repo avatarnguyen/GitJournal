@@ -5,6 +5,7 @@ import 'package:gitjournal/logger/logger.dart';
 abstract class GitManager {
   Future<List<String>> branches();
   Future<String> checkoutBranch(String branchName);
+  Future<void> resetHard();
 }
 
 class GitManagerImpl implements GitManager {
@@ -14,7 +15,7 @@ class GitManagerImpl implements GitManager {
 
   @override
   Future<List<String>> branches() async {
-    var repo = await GitAsyncRepository.load(repoPath).getOrThrow();
+    var repo = await getRepository();
     var branches = Set<String>.from(await repo.branches().getOrThrow());
     if (repo.config.remotes.isNotEmpty) {
       var remoteName = repo.config.remotes.first.name;
@@ -25,6 +26,9 @@ class GitManagerImpl implements GitManager {
     }
     return branches.toList()..sort();
   }
+
+  Future<GitAsyncRepository> getRepository() async =>
+      await GitAsyncRepository.load(repoPath).getOrThrow();
 
   @override
   Future<String> checkoutBranch(String branchName) async {
@@ -74,5 +78,24 @@ class GitManagerImpl implements GitManager {
 
     Log.i("Created branch $name");
     return name;
+  }
+
+  /// reset --hard the current branch to its remote branch
+  @override
+  Future<void> resetHard() async {
+    var repo = await getRepository();
+    var branchName = await repo.currentBranch().getOrThrow();
+    var branchConfig = repo.config.branch(branchName);
+    if (branchConfig == null) {
+      throw Exception("Branch config for '$branchName' not found");
+    }
+
+    var remoteName = branchConfig.remote;
+    if (remoteName == null) {
+      throw Exception("Branch config for '$branchName' missing remote");
+    }
+    var remoteBranch =
+        await repo.remoteBranch(remoteName, branchName).getOrThrow();
+    await repo.resetHard(remoteBranch.hash!).throwOnError();
   }
 }
