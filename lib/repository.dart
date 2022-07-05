@@ -512,8 +512,7 @@ class GitJournalRepo with ChangeNotifier {
 
   Future<void> discardChanges(Note note) async {
     // FIXME: Add the checkout method to GJRepo
-    var gitRepo = await GitAsyncRepository.load(repoPath).getOrThrow();
-    await gitRepo.checkout(note.filePath).throwOnError();
+    await gitManager.discardChanges(note.filePath);
 
     // FIXME: Instead of this just reload that specific file
     // FIXME: I don't think this will work!
@@ -544,20 +543,6 @@ class GitJournalRepo with ChangeNotifier {
     return branchName;
   }
 
-  // this is more local storage related
-  Future<void> delete() async {
-    dynamic _;
-    _ = await io.Directory(repoPath).delete(recursive: true);
-    _ = await io.Directory(cacheDir).delete(recursive: true);
-  }
-
-  Result<bool> fileExists(String path) {
-    return catchAllSync(() {
-      var type = io.FileSystemEntity.typeSync(path);
-      return Result(type != io.FileSystemEntityType.notFound);
-    });
-  }
-
   /// reset --hard the current branch to its remote branch
   Future<Result<void>> resetHard() {
     return catchAll(() async {
@@ -585,6 +570,20 @@ class GitJournalRepo with ChangeNotifier {
 
   Future<Result<void>> init(String repoPath) async {
     return gitManager.init(repoPath);
+  }
+
+  // this is more local storage related
+  Future<void> delete() async {
+    dynamic _;
+    _ = await io.Directory(repoPath).delete(recursive: true);
+    _ = await io.Directory(cacheDir).delete(recursive: true);
+  }
+
+  Result<bool> fileExists(String path) {
+    return catchAllSync(() {
+      var type = io.FileSystemEntity.typeSync(path);
+      return Result(type != io.FileSystemEntityType.notFound);
+    });
   }
 }
 

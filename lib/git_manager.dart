@@ -11,6 +11,7 @@ abstract class GitManager {
   Future<Result<void>> removeRemote(String remoteName);
   Future<Result<void>> ensureValidRepo();
   Future<Result<void>> init(String repoPath);
+  Future<void> discardChanges(String filePath);
 }
 
 class GitManagerImpl implements GitManager {
@@ -154,5 +155,11 @@ class GitManagerImpl implements GitManager {
   @override
   Future<Result<void>> init(String repoPath) async {
     return GitRepository.init(repoPath, defaultBranch: DEFAULT_BRANCH);
+  }
+
+  @override
+  Future<void> discardChanges(String filePath) async {
+    var gitRepo = await getRepository();
+    await gitRepo.checkout(filePath).throwOnError();
   }
 }
