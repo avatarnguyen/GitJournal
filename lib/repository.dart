@@ -551,6 +551,13 @@ class GitJournalRepo with ChangeNotifier {
     _ = await io.Directory(cacheDir).delete(recursive: true);
   }
 
+  Result<bool> fileExists(String path) {
+    return catchAllSync(() {
+      var type = io.FileSystemEntity.typeSync(path);
+      return Result(type != io.FileSystemEntityType.notFound);
+    });
+  }
+
   /// reset --hard the current branch to its remote branch
   Future<Result<void>> resetHard() {
     return catchAll(() async {
@@ -565,59 +572,19 @@ class GitJournalRepo with ChangeNotifier {
   }
 
   Future<Result<bool>> canResetHard() {
-    return catchAll(() async {
-      var repo =
-          await GitAsyncRepository.load(_gitRepo.gitRepoPath).getOrThrow();
-      var branchName = await repo.currentBranch().getOrThrow();
-      var branchConfig = repo.config.branch(branchName);
-      if (branchConfig == null) {
-        throw Exception("Branch config for '$branchName' not found");
-      }
-
-      var remoteName = branchConfig.remote;
-      if (remoteName == null) {
-        throw Exception("Branch config for '$branchName' misdsing remote");
-      }
-      var remoteBranch =
-          await repo.remoteBranch(remoteName, branchName).getOrThrow();
-      var headHash = await repo.headHash().getOrThrow();
-      return Result(remoteBranch.hash != headHash);
-    });
+    return gitManager.canResetHard();
   }
 
   Future<Result<void>> removeRemote(String remoteName) async {
-    var repo = GitRepository.load(repoPath).getOrThrow();
-    if (repo.config.remote(remoteName) != null) {
-      var r = repo.removeRemote(remoteName);
-      var _ = repo.close();
-      if (r.isFailure) {
-        return fail(r);
-      }
-    }
-
-    return Result(null);
+    return gitManager.removeRemote(remoteName);
   }
 
   Future<Result<void>> ensureValidRepo() async {
-    if (!GitRepository.isValidRepo(repoPath)) {
-      var r = GitRepository.init(repoPath, defaultBranch: DEFAULT_BRANCH);
-      if (r.isFailure) {
-        return fail(r);
-      }
-    }
-
-    return Result(null);
-  }
-
-  Result<bool> fileExists(String path) {
-    return catchAllSync(() {
-      var type = io.FileSystemEntity.typeSync(path);
-      return Result(type != io.FileSystemEntityType.notFound);
-    });
+    return gitManager.ensureValidRepo();
   }
 
   Future<Result<void>> init(String repoPath) async {
-    return GitRepository.init(repoPath, defaultBranch: DEFAULT_BRANCH);
+    return gitManager.init(repoPath);
   }
 }
 
