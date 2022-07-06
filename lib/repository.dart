@@ -383,37 +383,23 @@ class GitJournalRepo with ChangeNotifier {
 
     Future<void>? noteLoadingFuture;
     try {
-      await _networkLock.synchronized(() async {
-        await _gitRepo.fetch().throwOnError();
-      });
+      await gitFetch();
 
       attempt.add(SyncStatus.Merging);
 
-      final gitOpLock = RepositoryLock().gitOpLock;
-      await gitOpLock.synchronized(() async {
-        var r = await _gitRepo.merge();
-        if (r.isFailure) {
-          var ex = r.error!;
-          // When there is nothing to merge into
-          if (ex is! GitRefNotFound) {
-            throw ex;
-            // FIXME: Do not throw this exception, try to solve it somehow!!
-          }
-        }
-      });
+      await gitMerge();
 
       attempt.add(SyncStatus.Pushing);
       notifyListeners();
 
       noteLoadingFuture = _loadNotes();
 
-      await _networkLock.synchronized(() async {
-        await _gitRepo.push().throwOnError();
-      });
+      await gitPush();
 
       Log.d("Synced!");
       attempt.add(SyncStatus.Done);
-      numChanges = 0;
+      resetNumChanges();
+
       notifyListeners();
     } catch (e, stacktrace) {
       Log.e("Failed to Sync", ex: e, stacktrace: stacktrace);
@@ -434,6 +420,33 @@ class GitJournalRepo with ChangeNotifier {
     await noteLoadingFuture;
   }
 
+  Future<void> gitFetch() async {
+    await _networkLock.synchronized(() async {
+      await _gitRepo.fetch().throwOnError();
+    });
+  }
+
+  Future<void> gitMerge() async {
+    final gitOpLock = RepositoryLock().gitOpLock;
+    await gitOpLock.synchronized(() async {
+      var r = await _gitRepo.merge();
+      if (r.isFailure) {
+        var ex = r.error!;
+        // When there is nothing to merge into
+        if (ex is! GitRefNotFound) {
+          throw ex;
+          // FIXME: Do not throw this exception, try to solve it somehow!!
+        }
+      }
+    });
+  }
+
+  Future<void> gitPush() async {
+    await _networkLock.synchronized(() async {
+      await _gitRepo.push().throwOnError();
+    });
+  }
+
   Future<void> _syncNotes() async {
     var freq = settings.remoteSyncFrequency;
     if (freq != RemoteSyncFrequency.Automatic) {
@@ -445,6 +458,10 @@ class GitJournalRepo with ChangeNotifier {
 
   void syncNotesWithoutWaiting() {
     unawaited(_syncNotes());
+  }
+
+  void resetNumChanges() {
+    numChanges = 0;
   }
 
   void increaseNumChanges() {
