@@ -353,16 +353,20 @@ class GitJournalRepo with ChangeNotifier {
     return !storageConfig.storeInternally;
   }
 
+  Future<void> loadChanges() async {
+    var repoR = await GitAsyncRepository.load(repoPath);
+    if (repoR.isFailure) {
+      Log.e("SyncNotes Failed to Load Repo", result: repoR);
+      return;
+    }
+    var repo = repoR.getOrThrow();
+    await _commitUnTrackedChanges(repo, gitConfig).throwOnError();
+  }
+
   Future<void> syncNotes({bool doNotThrow = false}) async {
     // This is extremely slow with dart-git, can take over a second!
     if (_shouldCheckForChanges()) {
-      var repoR = await GitAsyncRepository.load(repoPath);
-      if (repoR.isFailure) {
-        Log.e("SyncNotes Failed to Load Repo", result: repoR);
-        return;
-      }
-      var repo = repoR.getOrThrow();
-      await _commitUnTrackedChanges(repo, gitConfig).throwOnError();
+      await loadChanges();
     }
 
     if (!remoteGitRepoConfigured) {
